@@ -684,7 +684,11 @@ input, select, textarea { font: inherit; color: inherit; }
 
 <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
+
+
 <script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbzCBaTVHVLRviELi21kH8FcPlsqrSxpIY-ZsYMbbQ-fQbpX7UcFLUx4yaqTse5ETxAc/exec'; // ← metti qui il tuo link /exec
+
 let allRecords = [];
 let filteredRecords = [];
 let activeCategory = 'Tutte';
@@ -692,8 +696,8 @@ let currentQuery = '';
 let isLoaded = false;
 let editingId = null;
 let loadedCategories = [];
-let originalCategories = [];
 
+// ── TEMA ──────────────────────────────────────────────────────
 (function(){
   document.documentElement.setAttribute('data-theme', 'dark');
   updateThemeIcon('dark');
@@ -710,12 +714,28 @@ function updateThemeIcon(theme) {
 
 document.getElementById('themeToggle').addEventListener('click', () => {
   const html = document.documentElement;
-  const current = html.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', next);
   updateThemeIcon(next);
 });
 
+// ── API ───────────────────────────────────────────────────────
+async function apiGet(params) {
+  const url = new URL(API_URL);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  return res.json();
+}
+
+async function apiPost(data) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+// ── FILTRI ────────────────────────────────────────────────────
 function buildFilters() {
   const wrap = document.getElementById('filterWrap');
   wrap.innerHTML = '';
@@ -736,60 +756,45 @@ function buildFilters() {
 }
 buildFilters();
 
-function loadData(silent = false) {
+// ── CARICAMENTO DATI ──────────────────────────────────────────
+async function loadData(silent = false) {
   if (!silent) showSkeletons();
   setStatus('loading', 'Caricamento rubrica…');
-
-  google.script.run
-    .withSuccessHandler(data => {
-      allRecords = data;
-      isLoaded = true;
-      document.getElementById('subtitleText').textContent = 'Policlinico Gemelli · ' + data.length + ' voci';
-      google.script.run
-        .withSuccessHandler(cats => {
-          loadedCategories = cats || [];
-          buildFilters();
-          if (currentQuery || activeCategory !== 'Tutte') {
-            applyFilter();
-          } else if (silent && filteredRecords.length > 0) {
-            applyFilter();
-          } else {
-            renderResults([]);
-            setStatus('ready', data.length + ' voci in rubrica — inizia a cercare o premi Mostra Tutti');
-          }
-        })
-        .withFailureHandler(() => {
-          if (currentQuery || activeCategory !== 'Tutte') {
-            applyFilter();
-          } else {
-            renderResults([]);
-            setStatus('ready', data.length + ' voci in rubrica — inizia a cercare o premi Mostra Tutti');
-          }
-        })
-        .getCategorie();
-    })
-    .withFailureHandler(err => {
-      setStatus('error', 'Errore caricamento: ' + err.message);
-      document.getElementById('results').innerHTML = errorState();
-    })
-    .searchRubrica('', 'Tutte');
+  try {
+    const [records, cats] = await Promise.all([
+      apiGet({ action: 'search', query: '', categoria: 'Tutte' }),
+      apiGet({ action: 'categorie' })
+    ]);
+    allRecords = records;
+    loadedCategories = (cats || []).filter(c => c !== 'Tutte');
+    isLoaded = true;
+    document.getElementById('subtitleText').textContent = 'Policlinico Gemelli · ' + allRecords.length + ' voci';
+    buildFilters();
+    if (currentQuery || activeCategory !== 'Tutte') {
+      applyFilter();
+    } else {
+      renderResults([]);
+      setStatus('ready', allRecords.length + ' voci in rubrica — inizia a cercare o premi Mostra Tutti');
+    }
+  } catch(err) {
+    setStatus('error', 'Errore caricamento');
+    document.getElementById('results').innerHTML = errorState();
+  }
 }
 
+// ── FILTRO ────────────────────────────────────────────────────
 function applyFilter() {
   if (!isLoaded) return;
   const q = normalizza(currentQuery).trim();
   const cat = activeCategory;
-
   const results = allRecords.filter(r => {
     if (cat !== 'Tutte' && r.categoria !== cat) return false;
     if (!q) return true;
     const hay = normalizza([r.nome, r.numeri, r.note, r.categoria].join(' '));
     return q.split(/\s+/).every(w => hay.includes(w));
   });
-
   filteredRecords = results;
   renderResults(results);
-
   const label = q || cat !== 'Tutte'
     ? results.length + ' risultat' + (results.length === 1 ? 'o' : 'i')
       + (q ? ' per "' + currentQuery + '"' : '')
@@ -798,9 +803,18 @@ function applyFilter() {
   setStatus('ready', label);
 }
 
+function normalizza(str) {
+  return String(str || '').toLowerCase()
+    .replace(/[àáâã]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõ]/g, 'o')
+    .replace(/[ùúûü]/g, 'u');
+}
+
+// ── RENDER ────────────────────────────────────────────────────
 function renderResults(records) {
   const container = document.getElementById('results');
-
   if (records.length === 0 && (currentQuery || activeCategory !== 'Tutte')) {
     container.innerHTML = `
       <div class="empty-state">
@@ -812,7 +826,6 @@ function renderResults(records) {
       </div>`;
     return;
   }
-
   if (records.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -826,31 +839,26 @@ function renderResults(records) {
       </div>`;
     return;
   }
-
   const fragment = document.createDocumentFragment();
   records.forEach((r, i) => {
     const card = document.createElement('div');
     card.className = 'card';
     card.setAttribute('role', 'listitem');
     card.style.animationDelay = Math.min(i * 20, 200) + 'ms';
-
     const numeri = String(r.numeri || '').split('/').map(n => n.trim()).filter(Boolean);
     const numBadges = numeri.map(n => {
       const cleaned = n.replace(/\s/g, '');
-      const href = 'tel:' + cleaned;
-      return `<a href="${href}" class="num-badge" title="Chiama ${n}">
+      return `<a href="tel:${cleaned}" class="num-badge">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
         </svg>
         ${escHtml(n)}
       </a>`;
     }).join('');
-
     const noteHtml = r.note ? `<div class="card-note">📌 ${escHtml(r.note)}</div>` : '';
-
     card.innerHTML = `
       <div class="card-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
         </svg>
       </div>
@@ -861,28 +869,25 @@ function renderResults(records) {
         <div class="card-categoria">${escHtml(r.categoria)}</div>
       </div>
       <button class="card-edit" aria-label="Modifica ${escHtml(r.nome)}" data-id="${r.id}">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       </button>`;
-
     card.querySelector('.card-edit').addEventListener('click', () => openEditModal(r));
     fragment.appendChild(card);
   });
-
   container.innerHTML = '';
   container.appendChild(fragment);
 }
 
 function showSkeletons() {
-  const container = document.getElementById('results');
-  container.innerHTML = Array(5).fill(0).map(() => `
+  document.getElementById('results').innerHTML = Array(5).fill(0).map(() => `
     <div class="skeleton-card">
       <div class="skeleton skeleton-icon"></div>
       <div class="skeleton-body">
-        <div class="skeleton" style="width:55%;height:0.9em"></div>
-        <div class="skeleton" style="width:35%;height:0.8em"></div>
+        <div class="skeleton" style="width:55%;height:14px"></div>
+        <div class="skeleton" style="width:35%;height:12px"></div>
       </div>
     </div>`).join('');
 }
@@ -901,11 +906,11 @@ function setStatus(type, msg) {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
   dot.className = 'status-dot' + (type === 'loading' ? ' loading' : '');
-  if (type === 'error') dot.style.background = 'var(--color-error)';
-  else dot.style.background = '';
+  dot.style.background = type === 'error' ? 'var(--color-error)' : '';
   text.textContent = msg;
 }
 
+// ── MODAL CONTATTO ────────────────────────────────────────────
 function populateCatSelect(selectedValue) {
   const sel = document.getElementById('fieldCategoria');
   const staticCats = ['Rubrica','Guardie e Urgenze','DECT Strutturati','Reparti','Day Hospital','Columbus','Servizi','Altro'];
@@ -937,8 +942,6 @@ function openNewModal() {
   editingId = null;
   document.getElementById('fieldId').value = '';
   openModal('Nuovo Contatto');
-  const delBtn = document.getElementById('btnDelete');
-  if (delBtn) delBtn.remove();
 }
 
 function openEditModal(r) {
@@ -949,7 +952,6 @@ function openEditModal(r) {
   document.getElementById('fieldNote').value = r.note || '';
   openModal('Modifica Contatto');
   populateCatSelect(r.categoria || 'Rubrica');
-
   const actions = document.getElementById('formActions');
   if (!document.getElementById('btnDelete')) {
     const delBtn = document.createElement('button');
@@ -976,100 +978,74 @@ document.getElementById('fieldCategoria').addEventListener('change', function() 
 function getSelectedCategoria() {
   const sel = document.getElementById('fieldCategoria');
   if (sel.value === '__custom__') {
-    const custom = document.getElementById('fieldCategoriaCustom').value.trim();
-    return custom || 'Altro';
+    return document.getElementById('fieldCategoriaCustom').value.trim() || 'Altro';
   }
   return sel.value;
 }
 
-document.getElementById('contactForm').addEventListener('submit', e => {
+document.getElementById('contactForm').addEventListener('submit', async e => {
   e.preventDefault();
   const nome = document.getElementById('fieldNome').value.trim();
   const numeri = document.getElementById('fieldNumeri').value.trim();
   const note = document.getElementById('fieldNote').value.trim();
   const categoria = getSelectedCategoria();
   const id = document.getElementById('fieldId').value;
-
   if (!nome || !numeri) { showToast('Compila Nome e Numeri', 'error'); return; }
 
   const saveBtn = document.getElementById('btnSave');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Salvataggio…';
 
-  if (id) {
-    google.script.run
-      .withSuccessHandler(res => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
-        if (res.success) {
-          closeModal();
-          showToast('Contatto aggiornato ✓', 'success');
-          loadData(true);
-        } else {
-          showToast('Errore: ' + res.error, 'error');
-        }
-      })
-      .withFailureHandler(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Salva';
-        showToast('Errore di rete', 'error');
-      })
-      .updateEntry(id, nome, numeri, note, categoria);
-  } else {
-    google.script.run
-      .withSuccessHandler(res => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
-        if (res.success) {
-          if (loadedCategories.indexOf(categoria) === -1 && categoria !== '__custom__') {
-            loadedCategories.push(categoria);
-            google.script.run.saveCategorie([...loadedCategories], []);
-          }
-          closeModal();
-          showToast('Contatto aggiunto ✓', 'success');
-          loadData(true);
-        } else {
-          showToast('Errore: ' + res.error, 'error');
-        }
-      })
-      .withFailureHandler(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Salva';
-        showToast('Errore di rete', 'error');
-      })
-      .addEntry(nome, numeri, note, categoria);
+  try {
+    const res = id
+      ? await apiPost({ action: 'update', id, nome, numeri, note, categoria })
+      : await apiPost({ action: 'add', nome, numeri, note, categoria });
+
+    if (res.success) {
+      if (!id && loadedCategories.indexOf(categoria) === -1 && categoria !== '__custom__') {
+        loadedCategories.push(categoria);
+        await apiPost({ action: 'saveCategorie', categorie: [...loadedCategories], renameMap: [] });
+      }
+      closeModal();
+      showToast(id ? 'Contatto aggiornato ✓' : 'Contatto aggiunto ✓', 'success');
+      await loadData(true);
+    } else {
+      showToast('Errore: ' + res.error, 'error');
+    }
+  } catch {
+    showToast('Errore di rete', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
   }
 });
 
 function handleDelete(id, nome) {
-  showToastConfirm('Eliminare "' + nome + '"?', () => {
-    google.script.run
-      .withSuccessHandler(res => {
-        if (res.success) {
-          closeModal();
-          showToast('Contatto eliminato', '');
-          loadData(true);
-        } else {
-          showToast('Errore: ' + res.error, 'error');
-        }
-      })
-      .withFailureHandler(() => showToast('Errore di rete', 'error'))
-      .deleteEntry(id);
+  showToastConfirm('Eliminare "' + nome + '"?', async () => {
+    try {
+      const res = await apiPost({ action: 'delete', id });
+      if (res.success) {
+        closeModal();
+        showToast('Contatto eliminato', '');
+        await loadData(true);
+      } else {
+        showToast('Errore: ' + res.error, 'error');
+      }
+    } catch {
+      showToast('Errore di rete', 'error');
+    }
   });
 }
 
+// ── MODAL CATEGORIE ───────────────────────────────────────────
 function openCatModal() {
   setStatus('loading', 'Caricamento categorie…');
-  google.script.run
-    .withSuccessHandler(cats => {
-      loadedCategories = (cats || []).filter(c => c !== 'Tutte');
-      originalCategories = [...loadedCategories];
-      renderCatList();
-      document.getElementById('catModalOverlay').classList.add('open');
-      setStatus('ready', allRecords.length + ' voci in rubrica');
-    })
-    .withFailureHandler(() => showToast('Errore caricamento categorie', 'error'))
-    .getCategorie();
+  apiGet({ action: 'categorie' }).then(cats => {
+    loadedCategories = (cats || []).filter(c => c !== 'Tutte');
+    renderCatList();
+    document.getElementById('catModalOverlay').classList.add('open');
+    setStatus('ready', allRecords.length + ' voci in rubrica');
+  }).catch(() => showToast('Errore caricamento categorie', 'error'));
 }
 
 function closeCatModal() {
@@ -1084,7 +1060,6 @@ function renderCatList() {
   loadedCategories.forEach((cat, i) => {
     const row = document.createElement('div');
     row.className = 'cat-row';
-    row.dataset.index = i;
     row.innerHTML = `
       <input type="text" class="cat-input" value="${escHtml(cat)}" data-original="${escHtml(cat)}" data-index="${i}">
       <button class="cat-delete" title="Elimina categoria" data-index="${i}">
@@ -1093,17 +1068,12 @@ function renderCatList() {
           <path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/>
         </svg>
       </button>`;
-
     const input = row.querySelector('.cat-input');
     input.addEventListener('input', () => {
-      const isModified = input.value !== input.dataset.original;
-      input.classList.toggle('modified', isModified);
+      input.classList.toggle('modified', input.value !== input.dataset.original);
       checkRenameHint();
     });
-
-    const delBtn = row.querySelector('.cat-delete');
-    delBtn.addEventListener('click', () => handleCatDelete(i, cat));
-
+    row.querySelector('.cat-delete').addEventListener('click', () => handleCatDelete(i, cat));
     list.appendChild(row);
   });
 }
@@ -1116,12 +1086,11 @@ function checkRenameHint() {
 function handleCatDelete(index, catName) {
   const count = allRecords.filter(r => r.categoria === catName).length;
   if (count > 0) {
-    showToast('❌ Impossibile: ' + count + ' record usa' + (count === 1 ? '' : 'no') + ' questa categoria', 'error');
+    showToast('Impossibile: ' + count + ' record usa' + (count === 1 ? '' : 'no') + ' questa categoria', 'error');
     return;
   }
   showToastConfirm('Eliminare "' + catName + '"?', () => {
     loadedCategories.splice(index, 1);
-    originalCategories = originalCategories.filter(c => c !== catName);
     renderCatList();
     showToast('Categoria rimossa (salva per confermare)', '');
   });
@@ -1138,50 +1107,40 @@ function handleCatAdd() {
   showToast('Categoria aggiunta (salva per confermare)', '');
 }
 
-function handleCatSave() {
+async function handleCatSave() {
   const inputs = document.querySelectorAll('.cat-input');
   const newCategories = [...inputs].map(inp => inp.value.trim()).filter(Boolean);
+  const renameMap = [...inputs]
+    .filter(inp => inp.dataset.original && inp.value.trim() && inp.dataset.original !== inp.value.trim())
+    .map(inp => ({ oldName: inp.dataset.original, newName: inp.value.trim() }));
 
-  const renameMap = [];
-  inputs.forEach(inp => {
-    const oldName = inp.dataset.original;
-    const newName = inp.value.trim();
-    if (oldName && newName && oldName !== newName) {
-      renameMap.push({ oldName, newName });
-    }
-  });
-
-  const unique = new Set(newCategories);
-  if (unique.size !== newCategories.length) {
-    showToast('Nomi duplicati non ammessi', 'error');
-    return;
+  if (new Set(newCategories).size !== newCategories.length) {
+    showToast('Nomi duplicati non ammessi', 'error'); return;
   }
 
   const saveBtn = document.getElementById('catSaveBtn');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Salvataggio…';
 
-  google.script.run
-    .withSuccessHandler(res => {
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva tutto';
-      if (res.success) {
-        closeCatModal();
-        showToast('Categorie salvate ✓', 'success');
-        loadData(true);
-        buildFilters();
-      } else {
-        showToast('Errore: ' + (res.error || 'sconosciuto'), 'error');
-      }
-    })
-    .withFailureHandler(() => {
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Salva tutto';
-      showToast('Errore di rete', 'error');
-    })
-    .saveCategorie(newCategories, renameMap);
+  try {
+    const res = await apiPost({ action: 'saveCategorie', categorie: newCategories, renameMap });
+    if (res.success) {
+      closeCatModal();
+      showToast('Categorie salvate ✓', 'success');
+      await loadData(true);
+      buildFilters();
+    } else {
+      showToast('Errore: ' + (res.error || 'sconosciuto'), 'error');
+    }
+  } catch {
+    showToast('Errore di rete', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva tutto';
+  }
 }
 
+// ── EVENT LISTENERS ───────────────────────────────────────────
 document.getElementById('btnManageCategories').addEventListener('click', openCatModal);
 document.getElementById('catModalClose').addEventListener('click', closeCatModal);
 document.getElementById('catCancelBtn').addEventListener('click', closeCatModal);
@@ -1196,20 +1155,18 @@ document.getElementById('catNewInput').addEventListener('keydown', e => {
 
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
-
 let searchTimer;
+
 searchInput.addEventListener('input', () => {
   currentQuery = searchInput.value;
   searchClear.classList.toggle('visible', currentQuery.length > 0);
   clearTimeout(searchTimer);
   if (!isLoaded) return;
-  searchTimer = setTimeout(applyFilter, 120);
+  searchTimer = setTimeout(applyFilter, 180);
 });
-
 searchInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') { clearTimeout(searchTimer); applyFilter(); }
 });
-
 searchClear.addEventListener('click', () => {
   searchInput.value = '';
   currentQuery = '';
@@ -1221,27 +1178,21 @@ searchClear.addEventListener('click', () => {
   }
   searchInput.focus();
 });
-
 document.getElementById('searchBtn').addEventListener('click', () => {
-  clearTimeout(searchTimer);
-  applyFilter();
+  clearTimeout(searchTimer); applyFilter();
 });
-
 document.getElementById('btnShowAll').addEventListener('click', () => {
   searchInput.value = '';
   currentQuery = '';
   activeCategory = 'Tutte';
   searchClear.classList.remove('visible');
-  document.querySelectorAll('#filterWrap .filter-chip').forEach((c, i) => {
-    c.classList.toggle('active', i === 0);
-  });
+  document.querySelectorAll('#filterWrap .filter-chip').forEach((c, i) => c.classList.toggle('active', i === 0));
   if (isLoaded) {
     filteredRecords = [...allRecords];
     renderResults(allRecords);
     setStatus('ready', allRecords.length + ' voci totali');
   }
 });
-
 document.getElementById('btnNewContact').addEventListener('click', openNewModal);
 document.getElementById('modalClose').addEventListener('click', closeModal);
 document.getElementById('btnCancel').addEventListener('click', closeModal);
@@ -1249,29 +1200,14 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
 });
 
+// ── TOAST ─────────────────────────────────────────────────────
 function showToast(msg, type) {
   const wrap = document.getElementById('toastWrap');
   const toast = document.createElement('div');
-  toast.className = 'toast';
-  
-  let bg = '#1a3a4a';
-  let border = '1px solid #4f98a3';
+  let bg = '#1a3a4a', border = '1px solid #4f98a3';
   if (type === 'success') { bg = '#1a3d1f'; border = '1px solid #66bb6a'; }
   if (type === 'error')   { bg = '#3d1a1a'; border = '1px solid #e57373'; }
-
-  toast.style.cssText = `
-    background:${bg};
-    border:${border};
-    border-radius:0.75rem;
-    padding:0.65rem 1.1rem;
-    font-size:0.875rem;
-    font-weight:500;
-    color:#e8e7e4;
-    white-space:nowrap;
-    box-shadow:0 4px 16px rgba(0,0,0,0.45);
-    animation:toastIn 0.2s ease both;
-    pointer-events:all;
-  `;
+  toast.style.cssText = `background:${bg};border:${border};border-radius:12px;padding:10px 18px;font-size:15px;font-weight:500;color:#e8e7e4;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.45);animation:toastIn 0.2s ease both;pointer-events:all;`;
   toast.textContent = msg;
   wrap.appendChild(toast);
   setTimeout(() => {
@@ -1283,52 +1219,29 @@ function showToast(msg, type) {
 function showToastConfirm(msg, onConfirm) {
   const wrap = document.getElementById('toastWrap');
   const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.style.cssText = `
-    display:flex;
-    flex-direction:column;
-    gap:0.75rem;
-    border-radius:0.75rem;
-    white-space:normal;
-    width:280px;
-    text-align:center;
-    background:#1a3a4a;
-    border:1px solid #4f98a3;
-    padding:1rem 1.25rem;
-  `;
+  toast.style.cssText = `display:flex;flex-direction:column;gap:12px;border-radius:12px;white-space:normal;width:280px;text-align:center;background:#1a3a4a;border:1px solid #4f98a3;padding:16px 20px;pointer-events:all;box-shadow:0 4px 16px rgba(0,0,0,0.45);`;
   toast.innerHTML = `
-    <span style="font-size:0.9rem;font-weight:600;color:#e8e7e4;">${escHtml(msg)}</span>
-    <div style="display:flex;gap:0.5rem;justify-content:center;">
-      <button id="toastNo"  style="flex:1;padding:0.45rem 0.75rem;border-radius:0.5rem;background:rgba(255,255,255,0.1);color:#e8e7e4;font-size:0.85rem;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,0.15);">Annulla</button>
-      <button id="toastSi" style="flex:1;padding:0.45rem 0.75rem;border-radius:0.5rem;background:#e57373;color:#fff;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;">Elimina</button>
+    <span style="font-size:15px;font-weight:600;color:#e8e7e4;">${escHtml(msg)}</span>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button id="toastNo"  style="flex:1;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.1);color:#e8e7e4;font-size:14px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,0.15);">Annulla</button>
+      <button id="toastSi" style="flex:1;padding:8px 12px;border-radius:8px;background:#e57373;color:#fff;font-size:14px;font-weight:600;cursor:pointer;border:none;">Elimina</button>
     </div>`;
   wrap.appendChild(toast);
-  const remove = () => {
-    toast.style.animation = 'toastOut 0.2s ease forwards';
-    setTimeout(() => toast.remove(), 200);
-  };
+  const remove = () => { toast.style.animation='toastOut 0.2s ease forwards'; setTimeout(()=>toast.remove(),200); };
   toast.querySelector('#toastSi').addEventListener('click', () => { remove(); onConfirm(); });
   toast.querySelector('#toastNo').addEventListener('click', remove);
 }
 
 function escHtml(str) {
   return String(str || '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function normalizza(str) {
-  return String(str || '').toLowerCase()
-    .replace(/[àáâã]/g, 'a')
-    .replace(/[èéêë]/g, 'e')
-    .replace(/[ìíîï]/g, 'i')
-    .replace(/[òóôõ]/g, 'o')
-    .replace(/[ùúûü]/g, 'u');
-}
-
+// ── AVVIO ─────────────────────────────────────────────────────
 loadData();
 </script>
+
+
 </body>
 </html>

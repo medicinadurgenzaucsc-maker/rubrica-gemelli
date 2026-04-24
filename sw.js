@@ -1,4 +1,4 @@
-const CACHE = 'rubrica-v1';
+const CACHE = 'rubrica-v2';
 const STATIC = ['./', './index.html', './manifest.json', './sw.js', './icon.svg'];
 
 self.addEventListener('install', e => {

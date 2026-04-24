@@ -19,8 +19,8 @@
       --text:     #111111;
       --muted:    #888888;
       --border:   #e5e5e5;
-      --accent:   #16a34a;
-      --num:      #15803d;
+      --accent:   #0891b2;
+      --num:      #0891b2;
       --modal-bg: #ffffff;
     }
     [data-theme="dark"] {
@@ -29,8 +29,8 @@
       --text:     #ececec;
       --muted:    #666666;
       --border:   #222222;
-      --accent:   #22c55e;
-      --num:      #4ade80;
+      --accent:   #20b8cd;
+      --num:      #20b8cd;
       --modal-bg: #111111;
     }
 
@@ -161,17 +161,19 @@
     .chip:hover { border-color: var(--accent); color: var(--accent); }
     .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    /* ── Lista contatti ── */
-    main { padding: .5rem 0; }
+    /* ── Card contatti ── */
+    main { padding: .75rem 0; }
 
     .contact-card {
       display: flex;
       align-items: center;
       gap: .75rem;
-      padding: .75rem 0;
-      border-bottom: 1px solid var(--border);
+      padding: .75rem .9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: .4rem;
     }
-    .contact-card:first-child { border-top: 1px solid var(--border); }
 
     .contact-info { flex: 1; min-width: 0; }
     .contact-name {

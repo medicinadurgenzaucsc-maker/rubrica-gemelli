@@ -1035,9 +1035,14 @@ document.getElementById('contactForm').addEventListener('submit', async e => {
       : await apiPost({ action: 'add', nome, numeri, note, categoria });
 
     if (res.success) {
-      if (!id && loadedCategories.indexOf(categoria) === -1 && categoria !== '__custom__') {
-        loadedCategories.push(categoria);
-        await apiPost({ action: 'saveCategorie', categorie: [...loadedCategories], renameMap: [] });
+      // Se la categoria è nuova, la salva in Config tramite saveCategorie
+      if (!id && categoria !== '__custom__' && !loadedCategories.includes(categoria)) {
+        const updatedCats = [...loadedCategories, categoria];
+        await apiPost({ action: 'saveCategorie', categorie: updatedCats, renameMap: [] });
+        // Rilegge dal server per essere sicuri
+        const cats = await apiGet({ action: 'categorie' });
+        loadedCategories = (cats || []).filter(c => c !== 'Tutte');
+        buildFilters();
       }
       closeModal();
       showToast(id ? 'Contatto aggiornato ✓' : 'Contatto aggiunto ✓', 'success');
@@ -1071,14 +1076,18 @@ function handleDelete(id, nome) {
 }
 
 // ── MODAL CATEGORIE ───────────────────────────────────────────
-function openCatModal() {
+async function openCatModal() {
   setStatus('loading', 'Caricamento categorie…');
-  apiGet({ action: 'categorie' }).then(cats => {
+  try {
+    const cats = await apiGet({ action: 'categorie' });
+    // Sovrascrive completamente loadedCategories dalla risposta server
     loadedCategories = (cats || []).filter(c => c !== 'Tutte');
     renderCatList();
     document.getElementById('catModalOverlay').classList.add('open');
     setStatus('ready', allRecords.length + ' voci in rubrica');
-  }).catch(() => showToast('Errore caricamento categorie', 'error'));
+  } catch {
+    showToast('Errore caricamento categorie', 'error');
+  }
 }
 
 function closeCatModal() {
@@ -1117,13 +1126,14 @@ function checkRenameHint() {
 }
 
 function handleCatDelete(index, catName) {
+  // Controlla record assegnati in cache
   const count = allRecords.filter(r => r.categoria === catName).length;
   if (count > 0) {
-    showToast('Impossibile: ' + count + ' record usa' + (count === 1 ? '' : 'no') + ' questa categoria', 'error');
+    showToast('Impossibile: ' + count + ' record usa' + (count === 1 ? '' : 'no') + ' "' + catName + '"', 'error');
     return;
   }
   showToastConfirm('Eliminare "' + catName + '"?', () => {
-    loadedCategories.splice(index, 1);
+    loadedCategories = loadedCategories.filter(c => c !== catName);
     renderCatList();
     showToast('Categoria rimossa (salva per confermare)', '');
   });
@@ -1147,8 +1157,16 @@ async function handleCatSave() {
     .filter(inp => inp.dataset.original && inp.value.trim() && inp.dataset.original !== inp.value.trim())
     .map(inp => ({ oldName: inp.dataset.original, newName: inp.value.trim() }));
 
+  // Controlla duplicati
   if (new Set(newCategories).size !== newCategories.length) {
-    showToast('Nomi duplicati non ammessi', 'error'); return;
+    showToast('Ci sono nomi duplicati', 'error');
+    return;
+  }
+
+  // Controlla nomi vuoti
+  if (newCategories.some(c => !c)) {
+    showToast('Nessun nome può essere vuoto', 'error');
+    return;
   }
 
   const saveBtn = document.getElementById('catSaveBtn');
@@ -1158,10 +1176,13 @@ async function handleCatSave() {
   try {
     const res = await apiPost({ action: 'saveCategorie', categorie: newCategories, renameMap });
     if (res.success) {
+      // Rilegge dal server dopo il salvataggio
+      const cats = await apiGet({ action: 'categorie' });
+      loadedCategories = (cats || []).filter(c => c !== 'Tutte');
+      buildFilters();
       closeCatModal();
       showToast('Categorie salvate ✓', 'success');
       await loadData(true);
-      buildFilters();
     } else {
       showToast('Errore: ' + (res.error || 'sconosciuto'), 'error');
     }

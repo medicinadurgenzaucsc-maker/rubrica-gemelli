@@ -821,7 +821,7 @@ function applyFilter() {
   const q = normalizza(currentQuery).trim();
   const cat = activeCategory;
   const results = allRecords.filter(r => {
-    if (cat !== 'Tutte' && r.categoria !== cat) return false;
+    if (cat !== 'Tutte' && (r.categoria || '').toLowerCase() !== cat.toLowerCase()) return false;
     if (!q) return true;
     const hay = normalizza([r.nome, r.numeri, r.note, r.categoria].join(' '));
     return q.split(/\s+/).every(w => hay.includes(w));
@@ -1016,45 +1016,66 @@ function getSelectedCategoria() {
   return sel.value;
 }
 
-document.getElementById('contactForm').addEventListener('submit', async e => {
+document.getElementById('contactForm').addEventListener('submit', e => {
   e.preventDefault();
   const nome = document.getElementById('fieldNome').value.trim();
   const numeri = document.getElementById('fieldNumeri').value.trim();
   const note = document.getElementById('fieldNote').value.trim();
   const categoria = getSelectedCategoria();
   const id = document.getElementById('fieldId').value;
+
   if (!nome || !numeri) { showToast('Compila Nome e Numeri', 'error'); return; }
 
   const saveBtn = document.getElementById('btnSave');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Salvataggio…';
 
-  try {
-    const res = id
-      ? await apiPost({ action: 'update', id, nome, numeri, note, categoria })
-      : await apiPost({ action: 'add', nome, numeri, note, categoria });
-
-    if (res.success) {
-      // Se la categoria è nuova, la salva in Config tramite saveCategorie
-      if (!id && categoria !== '__custom__' && !loadedCategories.includes(categoria)) {
-        const updatedCats = [...loadedCategories, categoria];
-        await apiPost({ action: 'saveCategorie', categorie: updatedCats, renameMap: [] });
-        // Rilegge dal server per essere sicuri
-        const cats = await apiGet({ action: 'categorie' });
-        loadedCategories = (cats || []).filter(c => c !== 'Tutte');
-        buildFilters();
-      }
-      closeModal();
-      showToast(id ? 'Contatto aggiornato ✓' : 'Contatto aggiunto ✓', 'success');
-      await loadData(true);
-    } else {
-      showToast('Errore: ' + res.error, 'error');
-    }
-  } catch {
-    showToast('Errore di rete', 'error');
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
+  if (id) {
+    google.script.run
+      .withSuccessHandler(res => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
+        if (res.success) {
+          closeModal();
+          showToast('Contatto aggiornato ✓', 'success');
+          loadData(true);
+        } else {
+          showToast('Errore: ' + res.error, 'error');
+        }
+      })
+      .withFailureHandler(() => {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Salva';
+        showToast('Errore di rete', 'error');
+      })
+      .updateEntry(id, nome, numeri, note, categoria);
+  } else {
+    google.script.run
+      .withSuccessHandler(res => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
+        if (res.success) {
+          // Controlla case-insensitive se la categoria esiste già
+          const existingCat = loadedCategories.find(
+            c => c.toLowerCase() === (categoria || '').toLowerCase()
+          );
+          if (!existingCat && categoria && categoria !== '__custom__') {
+            loadedCategories.push(categoria);
+            google.script.run.saveCategorie([...loadedCategories], []);
+          }
+          closeModal();
+          showToast('Contatto aggiunto ✓', 'success');
+          loadData(true);
+        } else {
+          showToast('Errore: ' + res.error, 'error');
+        }
+      })
+      .withFailureHandler(() => {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Salva';
+        showToast('Errore di rete', 'error');
+      })
+      .addEntry(nome, numeri, note, categoria);
   }
 });
 

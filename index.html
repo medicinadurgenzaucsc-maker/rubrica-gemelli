@@ -333,9 +333,9 @@
 <header>
   <div class="inner">
     <div class="header-top">
-      <div class="header-title">📞 Rubrica Gemelli</div>
+      <div class="header-title">› Rubrica Gemelli</div>
       <div class="header-count" id="countLabel"></div>
-      <button class="btn-theme" id="btnTheme" title="Cambia tema" aria-label="Cambia tema">🌙</button>
+      <button class="btn-theme" id="btnTheme" title="Cambia tema" aria-label="Cambia tema">◐</button>
     </div>
     <input type="search" id="searchBar" placeholder="Cerca nome o numero..." autocomplete="off" autocorrect="off" autocapitalize="off">
     <div class="btn-row">
@@ -349,7 +349,7 @@
 <main>
   <div class="inner" id="contactList">
     <div class="state-msg">
-      <div class="ico">⏳</div>
+      <div class="ico">···</div>
       <div>Caricamento rubrica...</div>
     </div>
   </div>
@@ -396,7 +396,7 @@ let activeSearch   = '';
 // ── Tema ──────────────────────────────────────────────────────────────────────
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('btnTheme').textContent = theme === 'dark' ? '☀️' : '🌙';
+  document.getElementById('btnTheme').textContent = '◐';
   localStorage.setItem('rubrica-theme', theme);
 }
 (function initTheme() {
@@ -481,7 +481,7 @@ function renderContacts(contacts) {
   const el = document.getElementById('contactList');
   updateCount(contacts.length);
   if (!contacts.length) {
-    el.innerHTML = '<div class="state-msg"><div class="ico">🔍</div><div>Nessun risultato</div></div>';
+    el.innerHTML = '<div class="state-msg"><div class="ico">∅</div><div>Nessun risultato</div></div>';
     return;
   }
   el.innerHTML = contacts.map(c => {
@@ -496,7 +496,7 @@ function renderContacts(contacts) {
           ${note}
           <div class="contact-cat">${esc(String(c.categoria))}</div>
         </div>
-        <button class="btn-edit" data-id="${c.id}" aria-label="Modifica">✏️</button>
+        <button class="btn-edit" data-id="${c.id}" aria-label="Modifica">/</button>
       </div>`;
   }).join('');
   el.querySelectorAll('.btn-edit').forEach(btn => {
@@ -506,12 +506,12 @@ function renderContacts(contacts) {
 
 function showLoading() {
   document.getElementById('contactList').innerHTML =
-    '<div class="state-msg"><div class="ico">⏳</div><div>Caricamento...</div></div>';
+    '<div class="state-msg"><div class="ico">···</div><div>Caricamento...</div></div>';
   updateCount(null);
 }
 function showError(msg) {
   document.getElementById('contactList').innerHTML =
-    `<div class="state-msg"><div class="ico">⚠️</div><div>${esc(msg)}</div><div class="sub">Controlla la connessione e riprova</div></div>`;
+    `<div class="state-msg"><div class="ico">×</div><div>${esc(msg)}</div><div class="sub">Controlla la connessione e riprova</div></div>`;
   updateCount(null);
 }
 function updateCount(n) {

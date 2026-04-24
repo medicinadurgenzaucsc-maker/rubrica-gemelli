@@ -536,20 +536,6 @@ input, select, textarea { font: inherit; color: inherit; }
 </head>
 <body>
 
-
-<script>
-// Forza scala corretta su iPhone dentro iframe Google
-(function() {
-  var meta = document.querySelector('meta[name=viewport]');
-  if (meta) {
-    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0');
-  }
-  // Forza font base a 18px per iPhone
-  document.documentElement.style.fontSize = '18px';
-})();
-</script>
-
-
 <div class="app">
 
   <header class="header">
@@ -573,16 +559,9 @@ input, select, textarea { font: inherit; color: inherit; }
   </header>
 
   <div class="search-wrap">
-    <input
-      type="search"
-      id="searchInput"
-      class="search-input"
+    <input type="search" id="searchInput" class="search-input"
       placeholder="Cerca reparto, medico, numero…"
-      autocomplete="off"
-      autocorrect="off"
-      spellcheck="false"
-      inputmode="search"
-    >
+      autocomplete="off" autocorrect="off" spellcheck="false" inputmode="search">
     <button class="search-clear" id="searchClear" aria-label="Cancella ricerca">✕</button>
     <button class="search-btn" id="searchBtn" aria-label="Cerca">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -607,18 +586,6 @@ input, select, textarea { font: inherit; color: inherit; }
     </button>
   </div>
 
-  <div class="filter-wrap" id="filterWrap" role="group" aria-label="Filtra per categoria"></div>
-  <select id="filterMobile" style="width:100%;padding:12px 14px;border-radius:12px;font-size:16px;background:var(--color-surface);border:1.5px solid var(--color-border);color:var(--color-text);margin-bottom:12px;-webkit-appearance:none;appearance:none;outline:none;">
-</select>
-  <div style="margin-bottom:0.75rem;">
-    <button class="filter-chip" id="btnManageCategories" style="gap:0.35rem;display:inline-flex;align-items:center;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-      </svg>
-      Gestione Categorie
-    </button>
-  </div>
-
   <div class="status-bar" id="statusBar">
     <div class="status-dot loading" id="statusDot"></div>
     <span id="statusText">Caricamento rubrica…</span>
@@ -628,33 +595,7 @@ input, select, textarea { font: inherit; color: inherit; }
 
 </div>
 
-<div class="modal-overlay" id="catModalOverlay" role="dialog" aria-modal="true" aria-labelledby="catModalTitle">
-  <div class="modal" id="catModalBox" style="max-width:420px;">
-    <div class="modal-header">
-      <div class="modal-title" id="catModalTitle">Gestione Categorie</div>
-      <button class="modal-close" id="catModalClose" aria-label="Chiudi">✕</button>
-    </div>
-    <div class="cat-rename-hint" id="catRenameHint">
-      ⚠️ Le categorie modificate verranno rinominate e tutti i record associati saranno aggiornati automaticamente.
-    </div>
-    <div id="catList"></div>
-    <div class="cat-add-row">
-      <input type="text" id="catNewInput" class="form-input" placeholder="Nome nuova categoria…" style="flex:1;">
-      <button class="btn btn-primary" id="catAddBtn" style="flex-shrink:0;min-width:90px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-        Aggiungi
-      </button>
-    </div>
-    <div class="form-actions" style="margin-top:1rem;">
-      <button class="btn btn-secondary" id="catCancelBtn">Annulla</button>
-      <button class="btn btn-primary" id="catSaveBtn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
-        Salva tutto
-      </button>
-    </div>
-  </div>
-</div>
-
+<!-- MODAL CONTATTO -->
 <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal" id="modalBox">
     <div class="modal-header">
@@ -676,11 +617,6 @@ input, select, textarea { font: inherit; color: inherit; }
         <label class="form-label" for="fieldNote">Note</label>
         <input type="text" id="fieldNote" class="form-input" placeholder="es. reperibile dopo le 17">
       </div>
-      <div class="form-group">
-        <label class="form-label" for="fieldCategoria">Categoria</label>
-        <select id="fieldCategoria" class="form-select"></select>
-        <input type="text" id="fieldCategoriaCustom" class="form-input" placeholder="Scrivi il nome della nuova categoria" style="margin-top:0.5rem;display:none;">
-      </div>
       <div class="form-actions" id="formActions">
         <button type="button" class="btn btn-secondary" id="btnCancel">Annulla</button>
         <button type="submit" class="btn btn-primary" id="btnSave">
@@ -694,18 +630,14 @@ input, select, textarea { font: inherit; color: inherit; }
 
 <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
-
-
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbzCBaTVHVLRviELi21kH8FcPlsqrSxpIY-ZsYMbbQ-fQbpX7UcFLUx4yaqTse5ETxAc/exec'; // ← metti qui il tuo link /exec
+const API_URL = 'https://script.google.com/macros/s/AKfycbzCBaTVHVLRviELi21kH8FcPlsqrSxpIY-ZsYMbbQ-fQbpX7UcFLUx4yaqTse5ETxAc/exec';
 
-let allRecords = [];
+let allRecords     = [];
 let filteredRecords = [];
-let activeCategory = 'Tutte';
-let currentQuery = '';
-let isLoaded = false;
-let editingId = null;
-let loadedCategories = [];
+let currentQuery   = '';
+let isLoaded       = false;
+let editingId      = null;
 
 // ── TEMA ──────────────────────────────────────────────────────
 (function(){
@@ -738,72 +670,20 @@ async function apiGet(params) {
 }
 
 async function apiPost(data) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
+  const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
   return res.json();
 }
-
-// ── FILTRI ────────────────────────────────────────────────────
-function buildFilters() {
-  const wrap = document.getElementById('filterWrap');
-  wrap.innerHTML = '';
-  const staticCats = ['Tutte','Guardie e Urgenze','DECT Strutturati','Reparti','Day Hospital','Rubrica','Columbus','Servizi','Altro'];
-  const dynCats = loadedCategories.length > 0 ? ['Tutte', ...loadedCategories] : staticCats;
-
-  // Chip desktop
-  dynCats.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-chip' + (cat === activeCategory ? ' active' : '');
-    btn.textContent = cat;
-    btn.addEventListener('click', () => {
-      activeCategory = cat;
-      document.querySelectorAll('#filterWrap .filter-chip').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-      syncMobileFilter();
-      applyFilter();
-    });
-    wrap.appendChild(btn);
-  });
-
-  // Select mobile
-  const mob = document.getElementById('filterMobile');
-  if (mob) {
-    mob.innerHTML = dynCats.map(cat =>
-      `<option value="${escHtml(cat)}"${cat === activeCategory ? ' selected' : ''}>${escHtml(cat)}</option>`
-    ).join('');
-    mob.onchange = function() {
-      activeCategory = this.value;
-      document.querySelectorAll('#filterWrap .filter-chip').forEach(c => {
-        c.classList.toggle('active', c.textContent === activeCategory);
-      });
-      applyFilter();
-    };
-  }
-}
-
-function syncMobileFilter() {
-  const mob = document.getElementById('filterMobile');
-  if (mob) mob.value = activeCategory;
-}
-buildFilters();
 
 // ── CARICAMENTO DATI ──────────────────────────────────────────
 async function loadData(silent = false) {
   if (!silent) showSkeletons();
   setStatus('loading', 'Caricamento rubrica…');
   try {
-    const [records, cats] = await Promise.all([
-      apiGet({ action: 'search', query: '', categoria: 'Tutte' }),
-      apiGet({ action: 'categorie' })
-    ]);
+    const records = await apiGet({ action: 'search', query: '' });
     allRecords = records;
-    loadedCategories = (cats || []).filter(c => c !== 'Tutte');
     isLoaded = true;
     document.getElementById('subtitleText').textContent = 'Policlinico Gemelli · ' + allRecords.length + ' voci';
-    buildFilters();
-    if (currentQuery || activeCategory !== 'Tutte') {
+    if (currentQuery) {
       applyFilter();
     } else {
       renderResults([]);
@@ -819,43 +699,37 @@ async function loadData(silent = false) {
 function applyFilter() {
   if (!isLoaded) return;
   const q = normalizza(currentQuery).trim();
-  const cat = activeCategory;
   const results = allRecords.filter(r => {
-    if (cat !== 'Tutte' && (r.categoria || '').toLowerCase() !== cat.toLowerCase()) return false;
     if (!q) return true;
-    const hay = normalizza([r.nome, r.numeri, r.note, r.categoria].join(' '));
+    const hay = normalizza([r.nome, r.numeri, r.note].join(' '));
     return q.split(/\s+/).every(w => hay.includes(w));
   });
   filteredRecords = results;
   renderResults(results);
-  const label = q || cat !== 'Tutte'
-    ? results.length + ' risultat' + (results.length === 1 ? 'o' : 'i')
-      + (q ? ' per "' + currentQuery + '"' : '')
-      + (cat !== 'Tutte' ? ' · ' + cat : '')
+  const label = q
+    ? results.length + ' risultat' + (results.length === 1 ? 'o' : 'i') + ' per "' + currentQuery + '"'
     : allRecords.length + ' voci in rubrica';
   setStatus('ready', label);
 }
 
 function normalizza(str) {
   return String(str || '').toLowerCase()
-    .replace(/[àáâã]/g, 'a')
-    .replace(/[èéêë]/g, 'e')
-    .replace(/[ìíîï]/g, 'i')
-    .replace(/[òóôõ]/g, 'o')
+    .replace(/[àáâã]/g, 'a').replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i').replace(/[òóôõ]/g, 'o')
     .replace(/[ùúûü]/g, 'u');
 }
 
 // ── RENDER ────────────────────────────────────────────────────
 function renderResults(records) {
   const container = document.getElementById('results');
-  if (records.length === 0 && (currentQuery || activeCategory !== 'Tutte')) {
+  if (records.length === 0 && currentQuery) {
     container.innerHTML = `
       <div class="empty-state">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35M8 11h6"/>
         </svg>
         <h3>Nessun risultato</h3>
-        <p>Prova con un termine diverso o cambia categoria</p>
+        <p>Prova con un termine diverso</p>
       </div>`;
     return;
   }
@@ -899,7 +773,6 @@ function renderResults(records) {
         <div class="card-nome">${escHtml(r.nome)}</div>
         <div class="card-numeri">${numBadges}</div>
         ${noteHtml}
-        <div class="card-categoria">${escHtml(r.categoria)}</div>
       </div>
       <button class="card-edit" aria-label="Modifica ${escHtml(r.nome)}" data-id="${r.id}">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -936,7 +809,7 @@ function errorState() {
 }
 
 function setStatus(type, msg) {
-  const dot = document.getElementById('statusDot');
+  const dot  = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
   dot.className = 'status-dot' + (type === 'loading' ? ' loading' : '');
   dot.style.background = type === 'error' ? 'var(--color-error)' : '';
@@ -944,20 +817,8 @@ function setStatus(type, msg) {
 }
 
 // ── MODAL CONTATTO ────────────────────────────────────────────
-function populateCatSelect(selectedValue) {
-  const sel = document.getElementById('fieldCategoria');
-  const cats = loadedCategories.length > 0 ? loadedCategories : ['Rubrica','Guardie e Urgenze','DECT Strutturati','Reparti','Day Hospital','Columbus','Servizi','Altro'];
-  sel.innerHTML = cats.map(c =>
-    `<option value="${escHtml(c)}"${c === selectedValue ? ' selected' : ''}>${escHtml(c)}</option>`
-  ).join('');
-  // Nasconde il campo testo "nuova categoria" se era aperto
-  const custom = document.getElementById('fieldCategoriaCustom');
-  if (custom) { custom.style.display = 'none'; custom.value = ''; }
-}
-
 function openModal(title) {
   document.getElementById('modalTitle').textContent = title;
-  populateCatSelect('Rubrica');
   document.getElementById('modalOverlay').classList.add('open');
   setTimeout(() => document.getElementById('fieldNome').focus(), 100);
 }
@@ -966,8 +827,6 @@ function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
   document.getElementById('contactForm').reset();
   document.getElementById('fieldId').value = '';
-  document.getElementById('fieldCategoriaCustom').style.display = 'none';
-  document.getElementById('fieldCategoriaCustom').value = '';
   editingId = null;
   const delBtn = document.getElementById('btnDelete');
   if (delBtn) delBtn.remove();
@@ -986,7 +845,6 @@ function openEditModal(r) {
   document.getElementById('fieldNumeri').value = r.numeri;
   document.getElementById('fieldNote').value = r.note || '';
   openModal('Modifica Contatto');
-  populateCatSelect(r.categoria || 'Rubrica');
   const actions = document.getElementById('formActions');
   if (!document.getElementById('btnDelete')) {
     const delBtn = document.createElement('button');
@@ -999,19 +857,12 @@ function openEditModal(r) {
   }
 }
 
-
-
-function getSelectedCategoria() {
-  return document.getElementById('fieldCategoria').value;
-}
-
 document.getElementById('contactForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const nome = document.getElementById('fieldNome').value.trim();
+  const nome   = document.getElementById('fieldNome').value.trim();
   const numeri = document.getElementById('fieldNumeri').value.trim();
-  const note = document.getElementById('fieldNote').value.trim();
-  const categoria = getSelectedCategoria();
-  const id = document.getElementById('fieldId').value;
+  const note   = document.getElementById('fieldNote').value.trim();
+  const id     = document.getElementById('fieldId').value;
 
   if (!nome || !numeri) { showToast('Compila Nome e Numeri', 'error'); return; }
 
@@ -1022,8 +873,8 @@ document.getElementById('contactForm').addEventListener('submit', async e => {
 
   try {
     const res = id
-      ? await apiPost({ action: 'update', id, nome, numeri, note, categoria })
-      : await apiPost({ action: 'add', nome, numeri, note, categoria });
+      ? await apiPost({ action: 'update', id, nome, numeri, note })
+      : await apiPost({ action: 'add', nome, numeri, note });
 
     if (res.success) {
       closeModal();
@@ -1057,138 +908,7 @@ function handleDelete(id, nome) {
   });
 }
 
-// ── MODAL CATEGORIE ───────────────────────────────────────────
-async function openCatModal() {
-  setStatus('loading', 'Caricamento categorie…');
-  try {
-    const cats = await apiGet({ action: 'categorie' });
-    // Sovrascrive completamente loadedCategories dalla risposta server
-    loadedCategories = (cats || []).filter(c => c !== 'Tutte');
-    renderCatList();
-    document.getElementById('catModalOverlay').classList.add('open');
-    setStatus('ready', allRecords.length + ' voci in rubrica');
-  } catch {
-    showToast('Errore caricamento categorie', 'error');
-  }
-}
-
-function closeCatModal() {
-  document.getElementById('catModalOverlay').classList.remove('open');
-  document.getElementById('catRenameHint').classList.remove('visible');
-  document.getElementById('catNewInput').value = '';
-}
-
-function renderCatList() {
-  const list = document.getElementById('catList');
-  list.innerHTML = '';
-  loadedCategories.forEach((cat, i) => {
-    const row = document.createElement('div');
-    row.className = 'cat-row';
-    row.innerHTML = `
-      <input type="text" class="cat-input" value="${escHtml(cat)}" data-original="${escHtml(cat)}" data-index="${i}">
-      <button class="cat-delete" title="Elimina categoria" data-index="${i}">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/>
-        </svg>
-      </button>`;
-    const input = row.querySelector('.cat-input');
-    input.addEventListener('input', () => {
-      input.classList.toggle('modified', input.value !== input.dataset.original);
-      checkRenameHint();
-    });
-    row.querySelector('.cat-delete').addEventListener('click', () => handleCatDelete(i, cat));
-    list.appendChild(row);
-  });
-}
-
-function checkRenameHint() {
-  const hasModified = [...document.querySelectorAll('.cat-input.modified')].length > 0;
-  document.getElementById('catRenameHint').classList.toggle('visible', hasModified);
-}
-
-function handleCatDelete(index, catName) {
-  // Controlla record assegnati in cache
-  const count = allRecords.filter(r => r.categoria === catName).length;
-  if (count > 0) {
-    showToast('Impossibile: ' + count + ' record usa' + (count === 1 ? '' : 'no') + ' "' + catName + '"', 'error');
-    return;
-  }
-  showToastConfirm('Eliminare "' + catName + '"?', () => {
-    loadedCategories = loadedCategories.filter(c => c !== catName);
-    renderCatList();
-    showToast('Categoria rimossa (salva per confermare)', '');
-  });
-}
-
-function handleCatAdd() {
-  const input = document.getElementById('catNewInput');
-  const name = input.value.trim();
-  if (!name) { showToast('Inserisci un nome', 'error'); return; }
-  if (loadedCategories.includes(name)) { showToast('Categoria già esistente', 'error'); return; }
-  loadedCategories.push(name);
-  renderCatList();
-  input.value = '';
-  showToast('Categoria aggiunta (salva per confermare)', '');
-}
-
-async function handleCatSave() {
-  const inputs = document.querySelectorAll('.cat-input');
-  const newCategories = [...inputs].map(inp => inp.value.trim()).filter(Boolean);
-  const renameMap = [...inputs]
-    .filter(inp => inp.dataset.original && inp.value.trim() && inp.dataset.original !== inp.value.trim())
-    .map(inp => ({ oldName: inp.dataset.original, newName: inp.value.trim() }));
-
-  // Controlla duplicati
-  if (new Set(newCategories).size !== newCategories.length) {
-    showToast('Ci sono nomi duplicati', 'error');
-    return;
-  }
-
-  // Controlla nomi vuoti
-  if (newCategories.some(c => !c)) {
-    showToast('Nessun nome può essere vuoto', 'error');
-    return;
-  }
-
-  const saveBtn = document.getElementById('catSaveBtn');
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Salvataggio…';
-
-  try {
-    const res = await apiPost({ action: 'saveCategorie', categorie: newCategories, renameMap });
-    if (res.success) {
-      // Rilegge dal server dopo il salvataggio
-      const cats = await apiGet({ action: 'categorie' });
-      loadedCategories = (cats || []).filter(c => c !== 'Tutte');
-      buildFilters();
-      closeCatModal();
-      showToast('Categorie salvate ✓', 'success');
-      await loadData(true);
-    } else {
-      showToast('Errore: ' + (res.error || 'sconosciuto'), 'error');
-    }
-  } catch {
-    showToast('Errore di rete', 'error');
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva tutto';
-  }
-}
-
 // ── EVENT LISTENERS ───────────────────────────────────────────
-document.getElementById('btnManageCategories').addEventListener('click', openCatModal);
-document.getElementById('catModalClose').addEventListener('click', closeCatModal);
-document.getElementById('catCancelBtn').addEventListener('click', closeCatModal);
-document.getElementById('catAddBtn').addEventListener('click', handleCatAdd);
-document.getElementById('catSaveBtn').addEventListener('click', handleCatSave);
-document.getElementById('catModalOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('catModalOverlay')) closeCatModal();
-});
-document.getElementById('catNewInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); handleCatAdd(); }
-});
-
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
 let searchTimer;
@@ -1220,9 +940,7 @@ document.getElementById('searchBtn').addEventListener('click', () => {
 document.getElementById('btnShowAll').addEventListener('click', () => {
   searchInput.value = '';
   currentQuery = '';
-  activeCategory = 'Tutte';
   searchClear.classList.remove('visible');
-  document.querySelectorAll('#filterWrap .filter-chip').forEach((c, i) => c.classList.toggle('active', i === 0));
   if (isLoaded) {
     filteredRecords = [...allRecords];
     renderResults(allRecords);
@@ -1238,7 +956,7 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 
 // ── TOAST ─────────────────────────────────────────────────────
 function showToast(msg, type) {
-  const wrap = document.getElementById('toastWrap');
+  const wrap  = document.getElementById('toastWrap');
   const toast = document.createElement('div');
   let bg = '#1a3a4a', border = '1px solid #4f98a3';
   if (type === 'success') { bg = '#1a3d1f'; border = '1px solid #66bb6a'; }
@@ -1253,13 +971,13 @@ function showToast(msg, type) {
 }
 
 function showToastConfirm(msg, onConfirm) {
-  const wrap = document.getElementById('toastWrap');
+  const wrap  = document.getElementById('toastWrap');
   const toast = document.createElement('div');
   toast.style.cssText = `display:flex;flex-direction:column;gap:12px;border-radius:12px;white-space:normal;width:280px;text-align:center;background:#1a3a4a;border:1px solid #4f98a3;padding:16px 20px;pointer-events:all;box-shadow:0 4px 16px rgba(0,0,0,0.45);`;
   toast.innerHTML = `
     <span style="font-size:15px;font-weight:600;color:#e8e7e4;">${escHtml(msg)}</span>
     <div style="display:flex;gap:8px;justify-content:center;">
-      <button id="toastNo"  style="flex:1;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.1);color:#e8e7e4;font-size:14px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,0.15);">Annulla</button>
+      <button id="toastNo" style="flex:1;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.1);color:#e8e7e4;font-size:14px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,0.15);">Annulla</button>
       <button id="toastSi" style="flex:1;padding:8px 12px;border-radius:8px;background:#e57373;color:#fff;font-size:14px;font-weight:600;cursor:pointer;border:none;">Elimina</button>
     </div>`;
   wrap.appendChild(toast);
@@ -1277,7 +995,6 @@ function escHtml(str) {
 // ── AVVIO ─────────────────────────────────────────────────────
 loadData();
 </script>
-
 
 </body>
 </html>

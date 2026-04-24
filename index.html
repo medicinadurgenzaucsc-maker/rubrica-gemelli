@@ -1055,17 +1055,32 @@ document.getElementById('contactForm').addEventListener('submit', e => {
         saveBtn.disabled = false;
         saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
         if (res.success) {
-          // Controlla case-insensitive se la categoria esiste già
           const existingCat = loadedCategories.find(
             c => c.toLowerCase() === (categoria || '').toLowerCase()
           );
           if (!existingCat && categoria && categoria !== '__custom__') {
-            loadedCategories.push(categoria);
-            google.script.run.saveCategorie([...loadedCategories], []);
+            // Categoria nuova: salva in Config e aspetta prima di chiudere
+            const updatedCats = [...loadedCategories, categoria];
+            google.script.run
+              .withSuccessHandler(() => {
+                loadedCategories = updatedCats;
+                buildFilters();
+                closeModal();
+                showToast('Contatto aggiunto ✓', 'success');
+                loadData(true);
+              })
+              .withFailureHandler(() => {
+                closeModal();
+                showToast('Contatto aggiunto, ma errore nel salvare la categoria', 'error');
+                loadData(true);
+              })
+              .saveCategorie(updatedCats, []);
+          } else {
+            // Categoria già esistente, chiudi subito
+            closeModal();
+            showToast('Contatto aggiunto ✓', 'success');
+            loadData(true);
           }
-          closeModal();
-          showToast('Contatto aggiunto ✓', 'success');
-          loadData(true);
         } else {
           showToast('Errore: ' + res.error, 'error');
         }

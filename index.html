@@ -21,6 +21,8 @@
       --border:   #e5e5e5;
       --accent:   #0891b2;
       --num:      #0891b2;
+      --num-bg:   #e0f7fa;
+      --note:     #555555;
       --modal-bg: #ffffff;
     }
     [data-theme="dark"] {
@@ -31,6 +33,8 @@
       --border:   #222222;
       --accent:   #20b8cd;
       --num:      #20b8cd;
+      --num-bg:   rgba(32,184,205,.12);
+      --note:     #aaaaaa;
       --modal-bg: #111111;
     }
 
@@ -41,7 +45,7 @@
       min-height: 100vh;
       padding-bottom: 3rem;
       transition: background .2s, color .2s;
-      font-size: 15px;
+      font-size: 17px;
     }
 
     .inner {
@@ -189,15 +193,17 @@
       font-size: .78rem;
       font-weight: 600;
       color: var(--accent);
+      background: var(--num-bg);
       text-decoration: none;
       letter-spacing: .03em;
+      padding: .18rem .55rem;
+      border-radius: 999px;
       transition: opacity .1s;
     }
-    .num-pill:not(:last-child)::after { content: '·'; color: var(--border); margin-left: .4rem; }
     .num-pill:active { opacity: .6; }
     .contact-note {
-      font-size: .72rem;
-      color: var(--muted);
+      font-size: .78rem;
+      color: var(--note);
       margin-top: .2rem;
     }
     .contact-cat { display: none; }

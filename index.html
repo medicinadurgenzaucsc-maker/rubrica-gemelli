@@ -946,11 +946,13 @@ function setStatus(type, msg) {
 // ── MODAL CONTATTO ────────────────────────────────────────────
 function populateCatSelect(selectedValue) {
   const sel = document.getElementById('fieldCategoria');
-  const staticCats = ['Rubrica','Guardie e Urgenze','DECT Strutturati','Reparti','Day Hospital','Columbus','Servizi','Altro'];
-  const allCats = [...new Set([...staticCats, ...loadedCategories])];
-  sel.innerHTML = allCats.map(c =>
+  const cats = loadedCategories.length > 0 ? loadedCategories : ['Rubrica','Guardie e Urgenze','DECT Strutturati','Reparti','Day Hospital','Columbus','Servizi','Altro'];
+  sel.innerHTML = cats.map(c =>
     `<option value="${escHtml(c)}"${c === selectedValue ? ' selected' : ''}>${escHtml(c)}</option>`
-  ).join('') + '<option value="__custom__">+ Nuova categoria…</option>';
+  ).join('');
+  // Nasconde il campo testo "nuova categoria" se era aperto
+  const custom = document.getElementById('fieldCategoriaCustom');
+  if (custom) { custom.style.display = 'none'; custom.value = ''; }
 }
 
 function openModal(title) {
@@ -997,26 +999,13 @@ function openEditModal(r) {
   }
 }
 
-document.getElementById('fieldCategoria').addEventListener('change', function() {
-  const custom = document.getElementById('fieldCategoriaCustom');
-  if (this.value === '__custom__') {
-    custom.style.display = 'block';
-    custom.focus();
-  } else {
-    custom.style.display = 'none';
-    custom.value = '';
-  }
-});
+
 
 function getSelectedCategoria() {
-  const sel = document.getElementById('fieldCategoria');
-  if (sel.value === '__custom__') {
-    return document.getElementById('fieldCategoriaCustom').value.trim() || 'Altro';
-  }
-  return sel.value;
+  return document.getElementById('fieldCategoria').value;
 }
 
-document.getElementById('contactForm').addEventListener('submit', e => {
+document.getElementById('contactForm').addEventListener('submit', async e => {
   e.preventDefault();
   const nome = document.getElementById('fieldNome').value.trim();
   const numeri = document.getElementById('fieldNumeri').value.trim();
@@ -1029,68 +1018,25 @@ document.getElementById('contactForm').addEventListener('submit', e => {
   const saveBtn = document.getElementById('btnSave');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Salvataggio…';
+  const svgSalva = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
 
-  if (id) {
-    google.script.run
-      .withSuccessHandler(res => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
-        if (res.success) {
-          closeModal();
-          showToast('Contatto aggiornato ✓', 'success');
-          loadData(true);
-        } else {
-          showToast('Errore: ' + res.error, 'error');
-        }
-      })
-      .withFailureHandler(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Salva';
-        showToast('Errore di rete', 'error');
-      })
-      .updateEntry(id, nome, numeri, note, categoria);
-  } else {
-    google.script.run
-      .withSuccessHandler(res => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> Salva';
-        if (res.success) {
-          const existingCat = loadedCategories.find(
-            c => c.toLowerCase() === (categoria || '').toLowerCase()
-          );
-          if (!existingCat && categoria && categoria !== '__custom__') {
-            // Categoria nuova: salva in Config e aspetta prima di chiudere
-            const updatedCats = [...loadedCategories, categoria];
-            google.script.run
-              .withSuccessHandler(() => {
-                loadedCategories = updatedCats;
-                buildFilters();
-                closeModal();
-                showToast('Contatto aggiunto ✓', 'success');
-                loadData(true);
-              })
-              .withFailureHandler(() => {
-                closeModal();
-                showToast('Contatto aggiunto, ma errore nel salvare la categoria', 'error');
-                loadData(true);
-              })
-              .saveCategorie(updatedCats, []);
-          } else {
-            // Categoria già esistente, chiudi subito
-            closeModal();
-            showToast('Contatto aggiunto ✓', 'success');
-            loadData(true);
-          }
-        } else {
-          showToast('Errore: ' + res.error, 'error');
-        }
-      })
-      .withFailureHandler(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Salva';
-        showToast('Errore di rete', 'error');
-      })
-      .addEntry(nome, numeri, note, categoria);
+  try {
+    const res = id
+      ? await apiPost({ action: 'update', id, nome, numeri, note, categoria })
+      : await apiPost({ action: 'add', nome, numeri, note, categoria });
+
+    if (res.success) {
+      closeModal();
+      showToast(id ? 'Contatto aggiornato ✓' : 'Contatto aggiunto ✓', 'success');
+      await loadData(true);
+    } else {
+      showToast('Errore: ' + res.error, 'error');
+    }
+  } catch {
+    showToast('Errore di rete', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = svgSalva;
   }
 });
 

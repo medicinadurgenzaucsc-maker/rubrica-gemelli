@@ -50,18 +50,31 @@ function parseLine(line) {
   line = line.trim();
   if (!line) return null;
 
-  const notes = [];
-  let clean = line.replace(/\(([^)]*)\)/g, (_, n) => { notes.push(n.trim()); return ' '; }).trim();
-  clean = clean.replace(/(\d)e\b/g, '$1'); // rimuovi suffisso 'e' Columbus
+  // Rimuovi suffisso 'e' Columbus (es. 9913e → 9913)
+  line = line.replace(/(\d)e\b/g, '$1');
 
-  const matches = clean.match(/\d{3,}/g);
-  if (!matches) return null;
-
-  const firstIdx = clean.search(/\d{3,}/);
-  const nome = clean.substring(0, firstIdx).trim().replace(/[\s\-]+$/, '').trim();
+  // Trova il primo numero per separare il nome
+  const firstIdx = line.search(/\d{3,}/);
+  if (firstIdx === -1) return null;
+  const nome = line.substring(0, firstIdx).trim().replace(/[\s\-]+$/, '').trim();
   if (!nome) return null;
 
-  return { nome, numeri: matches.join(', '), note: notes.join('; ') };
+  // Estrai coppie (numero, nota) dalla parte rimanente
+  // La nota è sempre la parentesi immediatamente dopo il numero
+  const rest = line.substring(firstIdx);
+  const pairs = [];
+  const re = /(\d{3,})\s*(?:\(([^)]*)\))?/g;
+  let m;
+  while ((m = re.exec(rest)) !== null) {
+    pairs.push({ n: m[1], nota: (m[2] || '').trim().replace(/\|/g, '') });
+  }
+  if (!pairs.length) return null;
+
+  return {
+    nome,
+    numeri: pairs.map(p => p.n).join('|'),
+    note:   pairs.map(p => p.nota).join('|'),
+  };
 }
 
 function importDaTxt() {

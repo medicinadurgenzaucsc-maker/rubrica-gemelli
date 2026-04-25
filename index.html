@@ -100,6 +100,47 @@
       transition: border-color .15s, color .15s;
     }
     .btn-theme:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-install {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      width: 1.9rem;
+      height: 1.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-install:hover  { border-color: var(--accent); color: var(--accent); }
+    .btn-install.ready  { color: var(--accent); border-color: var(--accent); }
+    .btn-install.done   { color: #f59e0b; border-color: #f59e0b; }
+
+    /* Toast */
+    #installToast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(1rem);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: .82rem;
+      padding: .6rem 1rem;
+      border-radius: 8px;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s, transform .2s;
+      z-index: 300;
+    }
+    #installToast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
 
     #searchBar {
       width: 100%;
@@ -416,6 +457,9 @@
       <div class="header-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:.4rem"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.3 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Rubrica Gemelli</div>
       <div class="header-count" id="countLabel"></div>
       <button class="btn-theme" id="btnTheme" title="Cambia tema" aria-label="Cambia tema">◐</button>
+      <button class="btn-install" id="btnInstall" title="Aggiungi a preferiti / Home" aria-label="Installa app">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </button>
     </div>
     <input type="search" id="searchBar" placeholder="Cerca nome o numero..." autocomplete="off" autocorrect="off" autocapitalize="off">
     <div class="btn-row">
@@ -434,6 +478,8 @@
     </div>
   </div>
 </main>
+
+<div id="installToast"></div>
 
 <div id="modalOverlay" hidden>
   <div id="modalBox">
@@ -756,6 +802,62 @@ async function deleteContact() {
 }
 
 init();
+
+// ── Installa / Preferiti ──────────────────────────────────────────────────────
+let installPrompt = null;
+const btnInstall  = document.getElementById('btnInstall');
+const isIOS       = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isInStandalone = window.matchMedia('(display-mode: standalone)').matches
+                    || window.navigator.standalone;
+
+// Cattura il prompt PWA (Android + Chrome/Edge desktop)
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installPrompt = e;
+  btnInstall.classList.add('ready');
+  btnInstall.title = 'Installa app';
+});
+
+// Installazione completata
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  setStarDone();
+});
+
+function setStarDone() {
+  btnInstall.classList.remove('ready');
+  btnInstall.classList.add('done');
+  btnInstall.querySelector('svg').setAttribute('fill', 'currentColor');
+}
+
+function showToast(msg, duration = 3500) {
+  let t = document.getElementById('installToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+btnInstall.addEventListener('click', async () => {
+  if (isInStandalone) {
+    showToast('App già installata sulla schermata Home');
+    return;
+  }
+  if (installPrompt) {
+    // Prompt nativo PWA (Android / Chrome / Edge desktop)
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') { installPrompt = null; setStarDone(); }
+  } else if (isIOS) {
+    // iOS Safari — istruzioni manuali
+    showToast('Safari: tocca  →  "Aggiungi a schermata Home"', 5000);
+  } else {
+    // Desktop senza prompt PWA (Firefox, Safari desktop…)
+    showToast('Premi Ctrl+D per aggiungere ai preferiti del browser');
+  }
+});
+
+// Se già installata, mostra stella piena
+if (isInStandalone) setStarDone();
 </script>
 </body>
 </html>

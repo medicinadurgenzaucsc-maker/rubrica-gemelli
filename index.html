@@ -187,7 +187,8 @@
       margin-bottom: .3rem;
       line-height: 1.3;
     }
-    .contact-numbers { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .contact-numbers { display: flex; flex-wrap: wrap; gap: .35rem .5rem; align-items: center; }
+    .num-group { display: inline-flex; align-items: center; gap: .3rem; }
     .num-pill {
       font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
       font-size: .78rem;
@@ -199,13 +200,87 @@
       padding: .18rem .55rem;
       border-radius: 999px;
       transition: opacity .1s;
+      white-space: nowrap;
     }
     .num-pill:active { opacity: .6; }
-    .contact-note {
-      font-size: .78rem;
+    .num-nota-inline {
+      font-size: .72rem;
       color: var(--note);
-      margin-top: .2rem;
+      white-space: nowrap;
     }
+
+    /* ── Modal: righe numero+nota dinamiche ── */
+    .num-row {
+      display: flex;
+      gap: .4rem;
+      align-items: center;
+      margin-bottom: .4rem;
+    }
+    .num-row-inputs {
+      display: flex;
+      gap: .4rem;
+      flex: 1;
+    }
+    .num-row-inputs .f-num {
+      width: 7rem;
+      flex-shrink: 0;
+      padding: .6rem .7rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: .88rem;
+      color: var(--text);
+      background: var(--surface);
+      font-family: 'SF Mono','Fira Code','Consolas',monospace;
+      font-weight: 600;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .num-row-inputs .f-num:focus { border-color: var(--accent); }
+    .num-row-inputs .f-num.invalid { border-color: #ef4444; }
+    .num-row-inputs .f-nota {
+      flex: 1;
+      padding: .6rem .7rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: .88rem;
+      color: var(--text);
+      background: var(--surface);
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .num-row-inputs .f-nota:focus { border-color: var(--accent); }
+    .btn-rm-num {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: .85rem;
+      width: 1.8rem;
+      height: 1.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color .12s, color .12s;
+    }
+    .btn-rm-num:hover { border-color: #ef4444; color: #ef4444; }
+    .btn-add-num {
+      margin-top: .2rem;
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: .82rem;
+      padding: .45rem .75rem;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      transition: border-color .12s, color .12s;
+    }
+    .btn-add-num:hover { border-color: var(--accent); color: var(--accent); }
     .contact-cat { display: none; }
 
     .btn-edit {
@@ -374,12 +449,9 @@
         <select id="fCategoria" required></select>
       </div>
       <div class="form-group">
-        <label>Numeri (separati da virgola)</label>
-        <input type="text" id="fNumeri" placeholder="es. 3111, 3112" inputmode="numeric">
-      </div>
-      <div class="form-group">
-        <label>Note</label>
-        <input type="text" id="fNote" placeholder="es. solo urgenze notturne">
+        <label>Numeri e note</label>
+        <div id="numeriContainer"></div>
+        <button type="button" id="btnAddNum" class="btn-add-num">+ Aggiungi numero</button>
       </div>
       <div class="modal-btns">
         <button type="button" class="btn-cancel" id="btnCancel">Annulla</button>
@@ -490,15 +562,17 @@ function renderContacts(contacts) {
     return;
   }
   el.innerHTML = contacts.map(c => {
-    const nums  = String(c.numeri || '').split(',').map(n => n.trim()).filter(Boolean);
-    const pills = nums.map(n => `<a class="num-pill" href="tel:${n}">${n}</a>`).join('');
-    const note  = c.note ? `<div class="contact-note">${esc(String(c.note))}</div>` : '';
+    const nums  = String(c.numeri || '').split('|').map(n => n.trim()).filter(Boolean);
+    const notes = String(c.note   || '').split('|');
+    const groups = nums.map((n, i) => {
+      const nota = (notes[i] || '').trim();
+      return `<span class="num-group"><a class="num-pill" href="tel:${n}">${n}</a>${nota ? `<span class="num-nota-inline">${esc(nota)}</span>` : ''}</span>`;
+    }).join('');
     return `
       <div class="contact-card">
         <div class="contact-info">
           <div class="contact-name">${esc(String(c.nome))}</div>
-          <div class="contact-numbers">${pills}</div>
-          ${note}
+          <div class="contact-numbers">${groups}</div>
           <div class="contact-cat">${esc(String(c.categoria))}</div>
         </div>
         <button class="btn-edit" data-id="${c.id}" aria-label="Modifica"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -541,6 +615,7 @@ function setupEvents() {
     renderContacts(allContacts);
   });
   document.getElementById('btnNew').addEventListener('click', () => openModal(null));
+  document.getElementById('btnAddNum').addEventListener('click', () => { const f = addNumRow(); f.focus(); });
   document.getElementById('btnCancel').addEventListener('click', closeModal);
   document.getElementById('modalOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modalOverlay')) closeModal();
@@ -555,17 +630,82 @@ function setupEvents() {
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
+function addNumRow(num = '', nota = '') {
+  const container = document.getElementById('numeriContainer');
+  const row = document.createElement('div');
+  row.className = 'num-row';
+  row.innerHTML = `
+    <div class="num-row-inputs">
+      <input type="tel" class="f-num" placeholder="Numero" value="${esc(num)}" inputmode="numeric" autocomplete="off">
+      <input type="text" class="f-nota" placeholder="Nota (opzionale)" value="${esc(nota)}" autocomplete="off">
+    </div>
+    <button type="button" class="btn-rm-num" aria-label="Rimuovi riga">×</button>`;
+
+  // Validazione numero: solo cifre, in tempo reale
+  const fNum = row.querySelector('.f-num');
+  fNum.addEventListener('input', () => {
+    fNum.value = fNum.value.replace(/[^\d]/g, '');
+    fNum.classList.toggle('invalid', fNum.value.length > 0 && !/^\d+$/.test(fNum.value));
+  });
+  fNum.addEventListener('blur', () => {
+    fNum.classList.toggle('invalid', fNum.value.length > 0 && !/^\d+$/.test(fNum.value));
+  });
+
+  // Validazione nota: impedisce il carattere separatore |
+  const fNota = row.querySelector('.f-nota');
+  fNota.addEventListener('input', () => {
+    if (fNota.value.includes('|')) fNota.value = fNota.value.replace(/\|/g, '');
+  });
+
+  // Rimuovi riga (non rimuovere se è l'unica)
+  row.querySelector('.btn-rm-num').addEventListener('click', () => {
+    if (document.querySelectorAll('.num-row').length > 1) row.remove();
+  });
+
+  container.appendChild(row);
+  return fNum;
+}
+
+function collectPairs() {
+  const rows = document.querySelectorAll('.num-row');
+  const numeri = [], note = [];
+  let valid = true;
+  rows.forEach(row => {
+    const n = row.querySelector('.f-num').value.trim();
+    const t = row.querySelector('.f-nota').value.trim();
+    if (!n) return; // riga vuota ignorata
+    if (!/^\d+$/.test(n)) {
+      row.querySelector('.f-num').classList.add('invalid');
+      valid = false;
+    } else {
+      numeri.push(n);
+      note.push(t);
+    }
+  });
+  if (!valid) return null;
+  return { numeri: numeri.join('|'), note: note.join('|') };
+}
+
 function openModal(contact) {
   const isNew = !contact;
   document.getElementById('modalTitle').textContent = isNew ? 'Nuovo Contatto' : 'Modifica Contatto';
-  document.getElementById('fId').value    = contact?.id ?? '';
-  document.getElementById('fNome').value  = contact?.nome ?? '';
-  document.getElementById('fNumeri').value = contact?.numeri ?? '';
-  document.getElementById('fNote').value  = contact?.note ?? '';
+  document.getElementById('fId').value   = contact?.id ?? '';
+  document.getElementById('fNome').value = contact?.nome ?? '';
   document.getElementById('btnDelete').hidden = isNew;
   document.getElementById('fCategoria').innerHTML = categories.map(c =>
     `<option value="${esc(c.nome)}"${c.nome === contact?.categoria ? ' selected' : ''}>${esc(c.nome)}</option>`
   ).join('');
+
+  // Popola righe numero+nota
+  document.getElementById('numeriContainer').innerHTML = '';
+  const nums  = String(contact?.numeri || '').split('|').map(s => s.trim()).filter(Boolean);
+  const notes = String(contact?.note   || '').split('|');
+  if (nums.length) {
+    nums.forEach((n, i) => addNumRow(n, notes[i] || ''));
+  } else {
+    addNumRow(); // riga vuota per nuovo contatto
+  }
+
   document.getElementById('modalOverlay').hidden = false;
   setTimeout(() => document.getElementById('fNome').focus(), 50);
 }
@@ -579,13 +719,18 @@ async function saveContact() {
   const id   = document.getElementById('fId').value;
   const nome = document.getElementById('fNome').value.trim();
   if (!nome) { alert('Il nome è obbligatorio'); return; }
+
+  const pairs = collectPairs();
+  if (!pairs) { alert('Uno o più numeri contengono caratteri non validi (solo cifre).'); return; }
+  if (!pairs.numeri) { alert('Inserisci almeno un numero.'); return; }
+
   const data = {
     action:    id ? 'update' : 'add',
     ...(id && { id: Number(id) }),
     nome,
     categoria: document.getElementById('fCategoria').value,
-    numeri:    document.getElementById('fNumeri').value.trim(),
-    note:      document.getElementById('fNote').value.trim(),
+    numeri:    pairs.numeri,
+    note:      pairs.note,
   };
   const btn = document.getElementById('btnSave');
   btn.textContent = '...'; btn.disabled = true;

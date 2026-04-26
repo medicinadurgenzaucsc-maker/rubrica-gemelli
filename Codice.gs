@@ -113,7 +113,8 @@ function doGet(e) {
     if (a === 'getAll')        result = getAllContatti();
     else if (a === 'search')   result = searchContatti(e.parameter.q || '');
     else if (a === 'getByCategory') result = getByCategory(e.parameter.cat || '');
-    else if (a === 'getCategorie')  result = getCategorie();
+    else if (a === 'getCategorie')        result = getCategorie();
+    else if (a === 'getCategorieConCount') result = getCategorieConCount();
     else result = { error: 'unknown action' };
   } catch (err) { result = { error: err.message }; }
   return ContentService.createTextOutput(JSON.stringify(result))
@@ -127,6 +128,9 @@ function doPost(e) {
     if (data.action === 'add')    result = addContatto(data);
     else if (data.action === 'update') result = updateContatto(data);
     else if (data.action === 'delete') result = deleteContatto(data.id);
+    else if (data.action === 'addCategoria')      result = addCategoriaGS(data.nome);
+    else if (data.action === 'rinominaCategoria') result = rinominaCategoriaGS(data.oldNome, data.newNome);
+    else if (data.action === 'eliminaCategoria')  result = eliminaCategoriaGS(data.nome);
     else result = { error: 'unknown action' };
   } catch (err) { result = { error: err.message }; }
   return ContentService.createTextOutput(JSON.stringify(result))
@@ -185,6 +189,75 @@ function deleteContatto(id) {
     if (String(vals[i][0]) === String(id)) { sheet.deleteRow(i + 1); return { success: true }; }
   }
   return { error: 'not found' };
+}
+
+// ─── GESTIONE CATEGORIE ───────────────────────────────────────────────────────
+
+function getCategorieConCount() {
+  const cats = getCategorie();
+  const contatti = sheetToObjects(getSheet('Contatti'));
+  return cats.map(c => ({
+    id: c.id, nome: c.nome, ordine: c.ordine,
+    count: contatti.filter(x => x.categoria === c.nome).length
+  }));
+}
+
+function addCategoriaGS(nome) {
+  const sheet = getSheet('Categorie');
+  const vals  = sheet.getDataRange().getValues();
+  const existing = vals.slice(1).map(r => String(r[1]).toLowerCase());
+  if (existing.includes(nome.toLowerCase())) {
+    return { error: 'Categoria già esistente: ' + nome };
+  }
+  const ids  = vals.slice(1).map(r => Number(r[0])).filter(Boolean);
+  const ords = vals.slice(1).map(r => Number(r[2])).filter(Boolean);
+  const newId  = ids.length  ? Math.max(...ids)  + 1 : 1;
+  const newOrd = ords.length ? Math.max(...ords) + 1 : 1;
+  sheet.appendRow([newId, nome, newOrd]);
+  return { success: true };
+}
+
+function rinominaCategoriaGS(oldNome, newNome) {
+  const catSheet  = getSheet('Categorie');
+  const contSheet = getSheet('Contatti');
+  // Controllo duplicato nel foglio categorie
+  const catVals = catSheet.getDataRange().getValues();
+  for (let i = 1; i < catVals.length; i++) {
+    if (catVals[i][1] !== oldNome &&
+        String(catVals[i][1]).toLowerCase() === newNome.toLowerCase()) {
+      return { error: 'Nome già in uso: ' + newNome };
+    }
+  }
+  // Aggiorna foglio Categorie
+  for (let i = 1; i < catVals.length; i++) {
+    if (catVals[i][1] === oldNome) {
+      catSheet.getRange(i + 1, 2).setValue(newNome);
+      break;
+    }
+  }
+  // Aggiorna tutti i contatti associati
+  const contVals = contSheet.getDataRange().getValues();
+  let updated = 0;
+  for (let i = 1; i < contVals.length; i++) {
+    if (contVals[i][2] === oldNome) {
+      contSheet.getRange(i + 1, 3).setValue(newNome);
+      updated++;
+    }
+  }
+  return { success: true, updated };
+}
+
+function eliminaCategoriaGS(nome) {
+  const contSheet = getSheet('Contatti');
+  const contatti  = sheetToObjects(contSheet);
+  const count = contatti.filter(c => c.categoria === nome).length;
+  if (count > 0) return { error: 'has_contacts', count };
+  const catSheet = getSheet('Categorie');
+  const vals = catSheet.getDataRange().getValues();
+  for (let i = 1; i < vals.length; i++) {
+    if (vals[i][1] === nome) { catSheet.deleteRow(i + 1); return { success: true }; }
+  }
+  return { error: 'not_found' };
 }
 
 // ─── DATI TXT ────────────────────────────────────────────────────────────────

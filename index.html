@@ -122,26 +122,31 @@
     /* Toast */
     #installToast {
       position: fixed;
-      bottom: 1.5rem;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%) translateY(1rem);
+      transform: translate(-50%, -50%) scale(.92);
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: .82rem;
-      padding: .6rem 1rem;
-      border-radius: 8px;
-      white-space: nowrap;
-      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+      font-size: .84rem;
+      padding: .7rem 1.15rem;
+      border-radius: 9px;
+      white-space: normal;
+      max-width: 88vw;
+      text-align: center;
+      box-shadow: 0 8px 28px rgba(0,0,0,.35);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .2s, transform .2s;
-      z-index: 300;
+      transition: opacity .18s, transform .18s;
+      z-index: 500;
     }
     #installToast.show {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translate(-50%, -50%) scale(1);
     }
+    #installToast.toast-error   { border-color: #ef4444; background: rgba(239,68,68,.15); }
+    #installToast.toast-warning { border-color: #f59e0b; background: rgba(245,158,11,.13); }
+    #installToast.toast-success { border-color: #22c55e; background: rgba(34,197,94,.13);  }
 
     #searchBar {
       width: 100%;
@@ -570,6 +575,19 @@
       white-space: nowrap;
     }
     .cat-add-row .btn-add-cat:active { opacity: .85; }
+
+    /* Spinner dentro i bottoni */
+    .btn-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .65s linear infinite;
+      opacity: .85;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -921,11 +939,11 @@ function closeModal() { document.getElementById('modalOverlay').hidden = true; }
 async function saveContact() {
   const id   = document.getElementById('fId').value;
   const nome = document.getElementById('fNome').value.trim();
-  if (!nome) { alert('Il nome è obbligatorio'); return; }
+  if (!nome) { showToast('Il nome è obbligatorio', 3000, 'warning'); return; }
 
   const pairs = collectPairs();
-  if (!pairs) { alert('Uno o più numeri contengono caratteri non validi (solo cifre).'); return; }
-  if (!pairs.numeri) { alert('Inserisci almeno un numero.'); return; }
+  if (!pairs) { showToast('Uno o più numeri contengono caratteri non validi (solo cifre)', 3500, 'warning'); return; }
+  if (!pairs.numeri) { showToast('Inserisci almeno un numero', 3000, 'warning'); return; }
 
   const data = {
     action:    id ? 'update' : 'add',
@@ -936,25 +954,28 @@ async function saveContact() {
     note:      pairs.note,
   };
   const btn = document.getElementById('btnSave');
-  btn.textContent = '...'; btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
     await apiPost(data);
     closeModal();
     await loadData();
   } catch (e) {
-    alert('Errore: ' + e.message);
+    showToast('Errore: ' + e.message, 4000, 'error');
   } finally {
     btn.textContent = 'Salva'; btn.disabled = false;
   }
 }
 async function deleteContact() {
-  const id = Number(document.getElementById('fId').value);
+  const id  = Number(document.getElementById('fId').value);
+  const btn = document.getElementById('btnDelete');
+  btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
     await apiPost({ action: 'delete', id });
     closeModal();
     await loadData();
   } catch (e) {
-    alert('Errore: ' + e.message);
+    showToast('Errore eliminazione: ' + e.message, 4000, 'error');
+    btn.textContent = 'Elimina'; btn.disabled = false;
   }
 }
 
@@ -1051,7 +1072,7 @@ function renderCatList() {
     if (btn.classList.contains('no-del')) {
       btn.addEventListener('click', () => {
         const c = catPending[Number(btn.dataset.pidx)];
-        showToast(`"${c.nome}" ha ${c.count} contatti — non può essere eliminata`, 4000);
+        showToast(`"${c.nome}" ha ${c.count} contatti — non può essere eliminata`, 4000, 'warning');
       });
       return;
     }
@@ -1069,14 +1090,14 @@ function renderCatList() {
 function addNewCategory() {
   const input = document.getElementById('fNewCat');
   const nome = formatCatName(input.value);
-  if (!nome) { showToast('Nome categoria non valido'); return; }
+  if (!nome) { showToast('Nome categoria non valido', 3000, 'warning'); return; }
 
   const allNames = [
     ...catPending.filter(c => !c.deleted).map(c => c.editNome.toLowerCase()),
     ...catPendingNew.map(c => c.nome.toLowerCase())
   ];
   if (allNames.includes(nome.toLowerCase())) {
-    showToast('Categoria già esistente: ' + nome); return;
+    showToast('Categoria già esistente: ' + nome, 3000, 'warning'); return;
   }
   catPendingNew.push({ nome });
   input.value = '';
@@ -1091,11 +1112,11 @@ async function saveCatChanges() {
     ...catPendingNew.map(c => formatCatName(c.nome))
   ];
   if (finalNames.some(n => !n)) {
-    showToast('Il nome di una categoria è vuoto o non valido'); return;
+    showToast('Il nome di una categoria è vuoto o non valido', 3000, 'warning'); return;
   }
   const lower = finalNames.map(n => n.toLowerCase());
   if (lower.some((n, i) => lower.indexOf(n) !== i)) {
-    showToast('Ci sono categorie con lo stesso nome'); return;
+    showToast('Ci sono categorie con lo stesso nome', 3000, 'warning'); return;
   }
 
   // Avviso rinomina con contatti
@@ -1109,7 +1130,7 @@ async function saveCatChanges() {
   }
 
   const btn = document.getElementById('btnCatSave');
-  btn.textContent = '...'; btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
     for (const nc of catPendingNew) {
       const r = await apiPost({ action: 'addCategoria', nome: formatCatName(nc.nome) });
@@ -1124,10 +1145,10 @@ async function saveCatChanges() {
       if (r.error) throw new Error(r.error);
     }
     document.getElementById('catModalOverlay').hidden = true;
-    showToast('Categorie aggiornate con successo');
+    showToast('Categorie aggiornate con successo', 3000, 'success');
     await loadData();
   } catch (e) {
-    showToast('Errore: ' + e.message, 5000);
+    showToast('Errore: ' + e.message, 5000, 'error');
   } finally {
     btn.textContent = 'Salva modifiche'; btn.disabled = false;
   }
@@ -1162,11 +1183,12 @@ function setStarDone() {
   btnInstall.querySelector('svg').setAttribute('fill', 'currentColor');
 }
 
-function showToast(msg, duration = 3500) {
-  let t = document.getElementById('installToast');
+function showToast(msg, duration = 3500, type = '') {
+  const t = document.getElementById('installToast');
   t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
+  t.className = 'show' + (type ? ' toast-' + type : '');
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => { t.classList.remove('show'); }, duration);
 }
 
 btnInstall.addEventListener('click', async () => {

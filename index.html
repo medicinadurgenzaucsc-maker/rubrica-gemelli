@@ -973,9 +973,11 @@ async function deleteContact() {
   try {
     await apiPost({ action: 'delete', id });
     closeModal();
+    showToast('Contatto eliminato con successo', 3000, 'success');
     await loadData();
   } catch (e) {
     showToast('Errore eliminazione: ' + e.message, 4000, 'error');
+  } finally {
     btn.textContent = 'Elimina'; btn.disabled = false;
   }
 }

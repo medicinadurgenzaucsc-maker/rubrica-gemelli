@@ -448,6 +448,128 @@
       cursor: pointer;
       font-family: inherit;
     }
+
+    /* ── Btn Settings ── */
+    .btn-settings {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      width: 1.9rem;
+      height: 1.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-settings:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Modal Categorie ── */
+    #catModalOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #catModalOverlay[hidden] { display: none; }
+    #catModalBox {
+      background: var(--modal-bg);
+      border-top: 1px solid var(--border);
+      border-radius: 12px 12px 0 0;
+      width: 100%;
+      max-width: 760px;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 1.25rem 1.25rem 1rem;
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+      transition: background .2s;
+    }
+
+    /* Righe categoria */
+    .cat-item {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .35rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cat-item:last-child { border-bottom: none; }
+    .cat-name-input {
+      flex: 1;
+      padding: .45rem .6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: .86rem;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--surface);
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .cat-name-input:focus { border-color: var(--accent); }
+    .cat-count {
+      font-size: .72rem;
+      color: var(--muted);
+      min-width: 3.4rem;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .cat-del-btn {
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      width: 1.8rem;
+      height: 1.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 0;
+      transition: all .12s;
+    }
+    .cat-del-btn.can-del { color: #ef4444; border-color: rgba(239,68,68,.3); }
+    .cat-del-btn.can-del:hover { background: rgba(239,68,68,.12); border-color: #ef4444; }
+    .cat-del-btn.no-del  { color: #ef4444; opacity: .25; cursor: default; }
+
+    /* Riga aggiungi nuova categoria */
+    .cat-add-row {
+      display: flex;
+      gap: .4rem;
+      margin-top: .3rem;
+    }
+    .cat-add-row input {
+      flex: 1;
+      padding: .6rem .8rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: .9rem;
+      color: var(--text);
+      background: var(--surface);
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .cat-add-row input:focus { border-color: var(--accent); }
+    .cat-add-row .btn-add-cat {
+      padding: .55rem 1rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: .84rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .cat-add-row .btn-add-cat:active { opacity: .85; }
   </style>
 </head>
 <body>
@@ -457,6 +579,9 @@
     <div class="header-top">
       <div class="header-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:.4rem"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.3 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Rubrica Gemelli</div>
       <div class="header-count" id="countLabel"></div>
+      <button class="btn-settings" id="btnSettings" title="Gestione categorie" aria-label="Gestione categorie">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
       <button class="btn-theme" id="btnTheme" title="Cambia tema" aria-label="Cambia tema">◐</button>
       <button class="btn-install" id="btnInstall" title="Aggiungi a preferiti / Home" aria-label="Installa app">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -481,6 +606,25 @@
 </main>
 
 <div id="installToast"></div>
+
+<!-- Modal Gestione Categorie -->
+<div id="catModalOverlay" hidden>
+  <div id="catModalBox">
+    <div class="modal-title">Gestione Categorie</div>
+    <div id="catList"></div>
+    <div class="form-group" style="margin-top:.9rem">
+      <label>Nuova categoria</label>
+      <div class="cat-add-row">
+        <input type="text" id="fNewCat" placeholder="es. CHIRURGIA" autocomplete="off" spellcheck="false">
+        <button type="button" id="btnAddCat" class="btn-add-cat">Aggiungi</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" id="btnCatCancel">Chiudi</button>
+      <button type="button" class="btn-primary" id="btnCatSave">Salva modifiche</button>
+    </div>
+  </div>
+</div>
 
 <div id="modalOverlay" hidden>
   <div id="modalBox">
@@ -667,6 +811,18 @@ function setupEvents() {
   document.getElementById('modalOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modalOverlay')) closeModal();
   });
+
+  // Categorie
+  document.getElementById('btnSettings').addEventListener('click', openCatModal);
+  document.getElementById('btnCatCancel').addEventListener('click', closeCatModal);
+  document.getElementById('catModalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('catModalOverlay')) closeCatModal();
+  });
+  document.getElementById('btnAddCat').addEventListener('click', addNewCategory);
+  document.getElementById('fNewCat').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addNewCategory(); }
+  });
+  document.getElementById('btnCatSave').addEventListener('click', saveCatChanges);
   document.getElementById('contactForm').addEventListener('submit', async e => {
     e.preventDefault();
     await saveContact();
@@ -799,6 +955,181 @@ async function deleteContact() {
     await loadData();
   } catch (e) {
     alert('Errore: ' + e.message);
+  }
+}
+
+// ── Categorie Modal ───────────────────────────────────────────────────────────
+let catOriginal   = [];  // [{id, nome, ordine, count}] dal server
+let catPending    = [];  // [{id, nome, editNome, ordine, count, deleted}]
+let catPendingNew = [];  // [{nome}] da aggiungere
+
+function formatCatName(s) {
+  // Mantiene lettere (anche accentate), cifre, spazi, trattini, underscore, punti
+  return s.replace(/[^a-zA-ZÀ-ÿ0-9 \-_.]/g, '').toUpperCase().trim();
+}
+
+async function openCatModal() {
+  document.getElementById('catModalOverlay').hidden = false;
+  document.getElementById('catList').innerHTML =
+    '<div style="text-align:center;padding:1.5rem 1rem"><div class="spinner"></div></div>';
+  try {
+    catOriginal   = await apiFetch('getCategorieConCount');
+    catPending    = catOriginal.map(c => ({ ...c, editNome: c.nome, deleted: false }));
+    catPendingNew = [];
+    renderCatList();
+  } catch (e) {
+    document.getElementById('catList').innerHTML =
+      `<div style="color:#ef4444;font-size:.85rem;padding:.5rem">Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+function closeCatModal() {
+  if (hasCatChanges() && !confirm('Ci sono modifiche non salvate. Chiudere ugualmente?')) return;
+  document.getElementById('catModalOverlay').hidden = true;
+}
+
+function hasCatChanges() {
+  return catPending.some(c => c.deleted || c.editNome !== c.nome) || catPendingNew.length > 0;
+}
+
+const TRASH_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
+function renderCatList() {
+  const el = document.getElementById('catList');
+
+  const existingHTML = catPending
+    .filter(c => !c.deleted)
+    .map(c => {
+      const pidx = catPending.indexOf(c);
+      const canDel = c.count === 0;
+      return `
+        <div class="cat-item">
+          <input class="cat-name-input" type="text" value="${esc(c.editNome)}"
+                 data-pidx="${pidx}" autocomplete="off" spellcheck="false">
+          <span class="cat-count">${c.count > 0 ? c.count + ' cont.' : '—'}</span>
+          <button class="cat-del-btn ${canDel ? 'can-del' : 'no-del'}"
+                  data-pidx="${pidx}" data-type="existing" type="button"
+                  title="${canDel ? 'Elimina' : 'Ha contatti — elimina prima i contatti'}">${TRASH_SVG}</button>
+        </div>`;
+    }).join('');
+
+  const newHTML = catPendingNew.map((nc, ni) => `
+    <div class="cat-item">
+      <input class="cat-name-input" type="text" value="${esc(nc.nome)}"
+             data-nidx="${ni}" autocomplete="off" spellcheck="false">
+      <span class="cat-count" style="color:var(--accent);font-style:italic">nuovo</span>
+      <button class="cat-del-btn can-del" data-nidx="${ni}" data-type="new"
+              type="button" title="Rimuovi">${TRASH_SVG}</button>
+    </div>`).join('');
+
+  el.innerHTML = existingHTML + newHTML;
+
+  // Input esistenti: aggiorna editNome, formatta on blur
+  el.querySelectorAll('.cat-name-input[data-pidx]').forEach(input => {
+    const idx = Number(input.dataset.pidx);
+    input.addEventListener('input', () => { catPending[idx].editNome = input.value; });
+    input.addEventListener('blur', () => {
+      const f = formatCatName(input.value) || catPending[idx].nome;
+      input.value = f;
+      catPending[idx].editNome = f;
+    });
+  });
+
+  // Input nuovi: aggiorna nome, formatta on blur
+  el.querySelectorAll('.cat-name-input[data-nidx]').forEach(input => {
+    const ni = Number(input.dataset.nidx);
+    input.addEventListener('input', () => { catPendingNew[ni].nome = input.value; });
+    input.addEventListener('blur', () => {
+      const f = formatCatName(input.value) || catPendingNew[ni].nome;
+      input.value = f;
+      catPendingNew[ni].nome = f;
+    });
+  });
+
+  // Bottoni cestino
+  el.querySelectorAll('.cat-del-btn').forEach(btn => {
+    if (btn.classList.contains('no-del')) {
+      btn.addEventListener('click', () => {
+        const c = catPending[Number(btn.dataset.pidx)];
+        showToast(`"${c.nome}" ha ${c.count} contatti — non può essere eliminata`, 4000);
+      });
+      return;
+    }
+    btn.addEventListener('click', () => {
+      if (btn.dataset.type === 'existing') {
+        catPending[Number(btn.dataset.pidx)].deleted = true;
+      } else {
+        catPendingNew.splice(Number(btn.dataset.nidx), 1);
+      }
+      renderCatList();
+    });
+  });
+}
+
+function addNewCategory() {
+  const input = document.getElementById('fNewCat');
+  const nome = formatCatName(input.value);
+  if (!nome) { showToast('Nome categoria non valido'); return; }
+
+  const allNames = [
+    ...catPending.filter(c => !c.deleted).map(c => c.editNome.toLowerCase()),
+    ...catPendingNew.map(c => c.nome.toLowerCase())
+  ];
+  if (allNames.includes(nome.toLowerCase())) {
+    showToast('Categoria già esistente: ' + nome); return;
+  }
+  catPendingNew.push({ nome });
+  input.value = '';
+  renderCatList();
+  input.focus();
+}
+
+async function saveCatChanges() {
+  // Nomi finali (dopo format)
+  const finalNames = [
+    ...catPending.filter(c => !c.deleted).map(c => formatCatName(c.editNome)),
+    ...catPendingNew.map(c => formatCatName(c.nome))
+  ];
+  if (finalNames.some(n => !n)) {
+    showToast('Il nome di una categoria è vuoto o non valido'); return;
+  }
+  const lower = finalNames.map(n => n.toLowerCase());
+  if (lower.some((n, i) => lower.indexOf(n) !== i)) {
+    showToast('Ci sono categorie con lo stesso nome'); return;
+  }
+
+  // Avviso rinomina con contatti
+  const renames = catPending.filter(c => !c.deleted && c.editNome !== c.nome);
+  const renamesWithCont = renames.filter(c => c.count > 0);
+  if (renamesWithCont.length) {
+    const msg = renamesWithCont.map(c =>
+      `• "${c.nome}" → "${c.editNome}" (${c.count} contatti verranno aggiornati)`
+    ).join('\n');
+    if (!confirm(`Attenzione:\n\n${msg}\n\nProcedere con il salvataggio?`)) return;
+  }
+
+  const btn = document.getElementById('btnCatSave');
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    for (const nc of catPendingNew) {
+      const r = await apiPost({ action: 'addCategoria', nome: formatCatName(nc.nome) });
+      if (r.error) throw new Error(r.error);
+    }
+    for (const c of renames) {
+      const r = await apiPost({ action: 'rinominaCategoria', oldNome: c.nome, newNome: formatCatName(c.editNome) });
+      if (r.error) throw new Error(r.error);
+    }
+    for (const c of catPending.filter(c => c.deleted)) {
+      const r = await apiPost({ action: 'eliminaCategoria', nome: c.nome });
+      if (r.error) throw new Error(r.error);
+    }
+    document.getElementById('catModalOverlay').hidden = true;
+    showToast('Categorie aggiornate con successo');
+    await loadData();
+  } catch (e) {
+    showToast('Errore: ' + e.message, 5000);
+  } finally {
+    btn.textContent = 'Salva modifiche'; btn.disabled = false;
   }
 }
 

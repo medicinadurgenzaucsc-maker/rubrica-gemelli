@@ -189,15 +189,11 @@
 
     #chips {
       display: flex;
+      flex-wrap: wrap;
       gap: .35rem;
-      overflow-x: auto;
       padding: .65rem 0 .55rem;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
     }
-    #chips::-webkit-scrollbar { display: none; }
     .chip {
-      flex-shrink: 0;
       padding: .22rem .65rem;
       border-radius: 999px;
       border: 1px solid var(--border);
@@ -740,7 +736,8 @@ async function apiPost(body) {
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderChips() {
   const el = document.getElementById('chips');
-  el.innerHTML = categories.map(c =>
+  const sorted = [...categories].sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+  el.innerHTML = sorted.map(c =>
     `<button class="chip${activeCategory === c.nome ? ' active' : ''}" data-cat="${esc(c.nome)}">${esc(c.nome)}</button>`
   ).join('');
   el.querySelectorAll('.chip').forEach(btn => {
@@ -757,11 +754,43 @@ function renderChips() {
 function applyFilters() {
   let result = allContacts;
   if (activeCategory) result = result.filter(c => c.categoria === activeCategory);
-  if (activeSearch)   result = result.filter(c =>
-    c.nome.toLowerCase().includes(activeSearch) ||
-    String(c.numeri || '').includes(activeSearch)
-  );
+  if (activeSearch)   result = smartSearch(result, activeSearch);
   renderContacts(result);
+}
+
+// ── Ricerca smart a 3 tier ────────────────────────────────────────────────────
+function smartSearch(contacts, rawQuery) {
+  const q = rawQuery.toLowerCase().trim();
+  if (!q) return contacts;
+
+  const tokens  = q.split(/\s+/).filter(Boolean);
+  const escRe   = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const haystack = c => [c.nome, c.numeri, c.note]
+    .map(s => String(s || '')).join(' ').toLowerCase();
+
+  // Tier 3 attivo solo se la query ha >= 4 caratteri
+  const doTier3 = q.length >= 4;
+
+  const tier1 = [], tier2 = [], tier3 = [];
+
+  for (const c of contacts) {
+    const h = haystack(c);
+
+    // Tier 1 — frase esatta (sottostringa contigua)
+    if (h.includes(q)) {
+      tier1.push(c);
+
+    // Tier 2 — tutte le parole presenti come parole intere (ordine qualsiasi)
+    } else if (tokens.every(t => new RegExp('\\b' + escRe(t) + '\\b').test(h))) {
+      tier2.push(c);
+
+    // Tier 3 — sottostringa all'interno di altre parole (query >= 4 chars)
+    } else if (doTier3 && tokens.every(t => h.includes(t))) {
+      tier3.push(c);
+    }
+  }
+
+  return [...tier1, ...tier2, ...tier3];
 }
 
 function renderContacts(contacts) {

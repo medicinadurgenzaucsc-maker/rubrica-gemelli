@@ -1,5 +1,5 @@
-const CACHE = 'rubrica-v2';
-const STATIC = ['./', './index.html', './manifest.json', './sw.js', './icon.svg'];
+const CACHE = 'rubrica-v3';
+const STATIC = ['./manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)));
@@ -14,7 +14,10 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.url.includes('script.google.com')) {
+  const url = e.request.url;
+
+  // Richieste GAS: solo rete, fallback errore offline
+  if (url.includes('script.google.com')) {
     e.respondWith(
       fetch(e.request).catch(() =>
         new Response('{"error":"offline"}', { headers: { 'Content-Type': 'application/json' } })
@@ -22,6 +25,22 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
+
+  // index.html e navigazione: SEMPRE rete prima, cache solo se offline
+  if (e.request.mode === 'navigate' ||
+      url.endsWith('.html') ||
+      url.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Asset statici (icon, manifest): cache first
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );

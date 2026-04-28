@@ -195,15 +195,22 @@ function eliminaCategoriaGS(nome) {
 // ─── CACHE TIMESTAMP ─────────────────────────────────────────────────────────
 
 function getTimestamp() {
-  const sheet = getSheet('updateCache');
-  if (!sheet) return { ts: 0 };
-  return { ts: Number(sheet.getRange('A1').getValue()) || 0 };
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName('updateCache');
+  if (!sheet) sheet = ss.insertSheet('updateCache');
+  const cell = sheet.getRange('A1');
+  let ts = Number(cell.getValue());
+  if (!ts) {
+    ts = Math.floor(new Date().getTime() / 1000);
+    cell.setValue(ts);
+  }
+  return { ts: ts };
 }
 
 function updateTimestampCache() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName('updateCache');
   if (!sheet) sheet = ss.insertSheet('updateCache');
-  sheet.getRange('A1').setValue(Math.floor(Date.now() / 1000));
+  sheet.getRange('A1').setValue(Math.floor(new Date().getTime() / 1000));
 }
 

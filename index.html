@@ -573,6 +573,48 @@
     }
     .cat-add-row .btn-add-cat:active { opacity: .85; }
 
+    /* ── Modal Filtro Alfabetico ── */
+    #alphaModalOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #alphaModalOverlay[hidden] { display: none; }
+    #alphaModalBox {
+      background: var(--modal-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: min(92vw, 400px);
+      padding: 1.2rem;
+      transition: background .2s;
+    }
+    .alpha-grid {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: .3rem;
+      margin-top: .75rem;
+    }
+    .alpha-btn {
+      padding: .45rem .15rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .12s;
+      text-align: center;
+    }
+    .alpha-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .alpha-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .alpha-btn.num-btn { font-size: .68rem; letter-spacing: -.02em; }
+
     /* Spinner dentro i bottoni */
     .btn-spinner {
       display: inline-block;
@@ -605,6 +647,7 @@
     <input type="search" id="searchBar" placeholder="Cerca nome o numero..." autocomplete="off" autocorrect="off" autocapitalize="off">
     <div class="btn-row">
       <button id="btnAll" class="active">Mostra Tutti</button>
+      <button id="btnAlpha">A – Z</button>
       <button id="btnNew">Nuovo Contatto</button>
     </div>
     <div id="chips"></div>
@@ -621,6 +664,15 @@
 </main>
 
 <div id="installToast"></div>
+
+<!-- Modal Filtro Alfabetico -->
+<div id="alphaModalOverlay" hidden>
+  <div id="alphaModalBox">
+    <div class="modal-title">Filtra per iniziale</div>
+    <div class="alpha-grid" id="alphaGrid"></div>
+    <button type="button" id="btnAlphaClose" class="btn-cancel" style="width:100%;margin-top:.9rem">Chiudi</button>
+  </div>
+</div>
 
 <!-- Modal Gestione Categorie -->
 <div id="catModalOverlay" hidden>
@@ -675,6 +727,7 @@ let allContacts = [];
 let categories  = [];
 let activeCategory = null;
 let activeSearch   = '';
+let activeAlpha    = null;
 
 // ── Tema ──────────────────────────────────────────────────────────────────────
 function applyTheme(theme) {
@@ -754,7 +807,15 @@ function renderChips() {
 function applyFilters() {
   let result = allContacts;
   if (activeCategory) result = result.filter(c => c.categoria === activeCategory);
-  if (activeSearch)   result = smartSearch(result, activeSearch);
+  if (activeAlpha) {
+    if (activeAlpha === '0-9') {
+      result = result.filter(c => /^\d/.test(String(c.nome || '')));
+    } else {
+      result = result.filter(c => String(c.nome || '').toUpperCase().startsWith(activeAlpha));
+    }
+    result = [...result].sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'it'));
+  }
+  if (activeSearch) result = smartSearch(result, activeSearch);
   renderContacts(result);
 }
 
@@ -848,10 +909,20 @@ function setupEvents() {
   document.getElementById('btnAll').addEventListener('click', () => {
     activeCategory = null;
     activeSearch   = '';
+    activeAlpha    = null;
     document.getElementById('searchBar').value = '';
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
     document.getElementById('btnAll').classList.add('active');
+    document.getElementById('btnAlpha').classList.remove('active');
     renderContacts(allContacts);
+  });
+  document.getElementById('btnAlpha').addEventListener('click', openAlphaModal);
+  document.getElementById('btnAlphaClose').addEventListener('click', () => {
+    document.getElementById('alphaModalOverlay').hidden = true;
+  });
+  document.getElementById('alphaModalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('alphaModalOverlay'))
+      document.getElementById('alphaModalOverlay').hidden = true;
   });
   document.getElementById('btnNew').addEventListener('click', () => openModal(null));
   document.getElementById('btnAddNum').addEventListener('click', () => { const f = addNumRow(); f.focus(); });
@@ -1009,6 +1080,38 @@ async function deleteContact() {
   } finally {
     btn.textContent = 'Elimina'; btn.disabled = false;
   }
+}
+
+// ── Filtro Alfabetico ─────────────────────────────────────────────────────────
+const ALPHA_KEYS = ['0-9', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+
+function openAlphaModal() {
+  const grid = document.getElementById('alphaGrid');
+  grid.innerHTML = ALPHA_KEYS.map(k =>
+    `<button class="alpha-btn${k === '0-9' ? ' num-btn' : ''}${activeAlpha === k ? ' active' : ''}"
+             data-key="${k}" type="button">${k}</button>`
+  ).join('');
+  grid.querySelectorAll('.alpha-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      const overlay = document.getElementById('alphaModalOverlay');
+      const btnAlpha = document.getElementById('btnAlpha');
+      const btnAll   = document.getElementById('btnAll');
+      if (activeAlpha === key) {
+        // Secondo click sulla stessa lettera → deseleziona
+        activeAlpha = null;
+        btnAlpha.classList.remove('active');
+        btnAll.classList.add('active');
+      } else {
+        activeAlpha = key;
+        btnAlpha.classList.add('active');
+        btnAll.classList.remove('active');
+      }
+      overlay.hidden = true;
+      applyFilters();
+    });
+  });
+  document.getElementById('alphaModalOverlay').hidden = false;
 }
 
 // ── Categorie Modal ───────────────────────────────────────────────────────────

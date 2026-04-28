@@ -760,15 +760,63 @@ async function init() {
   await loadData();
 }
 
+// ── Ordinamento contatti: numeri prima, poi alfabetico ────────────────────────
+function sortContacts(arr) {
+  return [...arr].sort((a, b) => {
+    const an = String(a.nome || '');
+    const bn = String(b.nome || '');
+    const aNum = /^\d/.test(an);
+    const bNum = /^\d/.test(bn);
+    if (aNum && !bNum) return -1;
+    if (!aNum && bNum) return 1;
+    return an.localeCompare(bn, 'it');
+  });
+}
+
 async function loadData() {
   try {
     showLoading();
-    const [contacts, cats] = await Promise.all([
-      apiFetch('getAll'),
-      apiFetch('getCategorie'),
-    ]);
-    allContacts = contacts;
-    categories  = cats;
+
+    // ── Timestamp cache ───────────────────────────────────────────────────────
+    const LS_DATA = 'rubrica-data';
+    const LS_CATS = 'rubrica-cats';
+    const LS_TS   = 'rubrica-ts';
+
+    let usedCache = false;
+    try {
+      const remoteTs = await apiFetch('getTimestamp');       // { ts: 1234567890 }
+      const localTs  = Number(localStorage.getItem(LS_TS)) || 0;
+
+      if (remoteTs.ts && remoteTs.ts === localTs) {
+        // Cache fresca: usa i dati locali
+        const cachedData = localStorage.getItem(LS_DATA);
+        const cachedCats = localStorage.getItem(LS_CATS);
+        if (cachedData && cachedCats) {
+          allContacts = sortContacts(JSON.parse(cachedData));
+          categories  = JSON.parse(cachedCats);
+          usedCache   = true;
+        }
+      }
+    } catch (_) { /* se il timestamp fallisce, si scarica normalmente */ }
+
+    if (!usedCache) {
+      // Cache scaduta o assente: scarica tutto e salva
+      const [contacts, cats] = await Promise.all([
+        apiFetch('getAll'),
+        apiFetch('getCategorie'),
+      ]);
+      allContacts = sortContacts(contacts);
+      categories  = cats;
+
+      // Aggiorna timestamp locale dopo il fetch riuscito
+      try {
+        const remoteTs2 = await apiFetch('getTimestamp');
+        localStorage.setItem(LS_TS,   String(remoteTs2.ts));
+        localStorage.setItem(LS_DATA, JSON.stringify(contacts));
+        localStorage.setItem(LS_CATS, JSON.stringify(cats));
+      } catch (_) { /* salvataggio cache non critico */ }
+    }
+
     renderChips();
     renderContacts(allContacts);
   } catch (e) {

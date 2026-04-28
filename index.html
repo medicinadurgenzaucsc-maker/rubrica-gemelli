@@ -784,8 +784,8 @@ async function loadData() {
 
     let usedCache = false;
     try {
-      const remoteTs = await apiFetch('getTimestamp');       // { ts: 1234567890 }
-      const localTs  = Number(localStorage.getItem(LS_TS)) || 0;
+      const remoteTs = await apiFetch('getTimestamp');       // { ts: 1234567890 } Unix secondi
+      const localTs  = parseInt(localStorage.getItem(LS_TS), 10) || 0;
 
       if (remoteTs.ts && remoteTs.ts === localTs) {
         // Cache fresca: usa i dati locali

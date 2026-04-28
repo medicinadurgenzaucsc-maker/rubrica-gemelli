@@ -787,6 +787,10 @@ async function loadData() {
       const remoteTs = await apiFetch('getTimestamp');       // { ts: 1234567890 } Unix secondi
       const localTs  = parseInt(localStorage.getItem(LS_TS), 10) || 0;
 
+      // DEBUG ▼
+      alert(`🔍 DEBUG CACHE\nTimestamp remoto : ${remoteTs.ts}\nTimestamp locale : ${localTs}\nMatch: ${remoteTs.ts === localTs ? '✅ SÌ → userò la cache' : '❌ NO → scarico da GAS'}`);
+      // DEBUG ▲
+
       if (remoteTs.ts && remoteTs.ts === localTs) {
         // Cache fresca: usa i dati locali
         const cachedData = localStorage.getItem(LS_DATA);
@@ -797,7 +801,11 @@ async function loadData() {
           usedCache   = true;
         }
       }
-    } catch (_) { /* se il timestamp fallisce, si scarica normalmente */ }
+    } catch (err) {
+      // DEBUG ▼
+      alert(`⚠️ DEBUG: getTimestamp ha fallito\n${err.message}\n→ scarico da GAS`);
+      // DEBUG ▲
+    }
 
     if (!usedCache) {
       // Cache scaduta o assente: scarica tutto e salva
@@ -814,7 +822,14 @@ async function loadData() {
         localStorage.setItem(LS_TS,   String(remoteTs2.ts));
         localStorage.setItem(LS_DATA, JSON.stringify(contacts));
         localStorage.setItem(LS_CATS, JSON.stringify(cats));
+        // DEBUG ▼
+        alert(`✅ DEBUG: dati scaricati da GAS e salvati in cache\nNuovo timestamp locale: ${remoteTs2.ts}`);
+        // DEBUG ▲
       } catch (_) { /* salvataggio cache non critico */ }
+    } else {
+      // DEBUG ▼
+      alert(`⚡ DEBUG: dati caricati dalla cache locale (nessuna chiamata a GAS per i dati)`);
+      // DEBUG ▲
     }
 
     renderChips();

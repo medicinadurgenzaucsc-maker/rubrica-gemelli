@@ -204,6 +204,6 @@ function updateTimestampCache() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName('updateCache');
   if (!sheet) sheet = ss.insertSheet('updateCache');
-  sheet.getRange('A1').setValue(Date.now());
+  sheet.getRange('A1').setValue(Math.floor(Date.now() / 1000));
 }
 

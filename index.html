@@ -1094,6 +1094,23 @@ function openEdit(id) {
 }
 function closeModal() { document.getElementById('modalOverlay').hidden = true; }
 
+// ── Aggiorna array locale + cache (senza ricaricare da GAS) ──────────────────
+function updateLocalData(contacts, cats) {
+  allContacts = sortContacts(contacts);
+  categories  = cats;
+  renderChips();
+  applyFilters();
+  // Sincronizza timestamp e localStorage in background
+  apiFetch('getTimestamp').then(r => {
+    localStorage.setItem('rubrica-ts',   String(r.ts));
+    localStorage.setItem('rubrica-data', JSON.stringify(contacts));
+    localStorage.setItem('rubrica-cats', JSON.stringify(cats));
+  }).catch(() => {
+    // Se fallisce, invalida la cache così il prossimo caricamento rilegge da GAS
+    localStorage.removeItem('rubrica-ts');
+  });
+}
+
 async function saveContact() {
   const id   = document.getElementById('fId').value;
   const nome = document.getElementById('fNome').value.trim();
@@ -1114,24 +1131,39 @@ async function saveContact() {
   const btn = document.getElementById('btnSave');
   btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
-    await apiPost(data);
+    const result = await apiPost(data);
     closeModal();
-    await loadData();
+    let updatedContacts;
+    if (!id) {
+      // Nuovo contatto: aggiunge all'array con l'id restituito da GAS
+      updatedContacts = [...allContacts, { id: result.id, nome: data.nome, categoria: data.categoria, numeri: data.numeri, note: data.note }];
+      showToast('Contatto aggiunto con successo', 3000, 'success');
+    } else {
+      // Modifica: sostituisce il record esistente
+      updatedContacts = allContacts.map(c =>
+        String(c.id) === String(id)
+          ? { ...c, nome: data.nome, categoria: data.categoria, numeri: data.numeri, note: data.note }
+          : c
+      );
+      showToast('Contatto aggiornato con successo', 3000, 'success');
+    }
+    updateLocalData(updatedContacts, categories);
   } catch (e) {
     showToast('Errore: ' + e.message, 4000, 'error');
   } finally {
     btn.textContent = 'Salva'; btn.disabled = false;
   }
 }
+
 async function deleteContact() {
-  const id  = Number(document.getElementById('fId').value);
+  const id  = document.getElementById('fId').value;
   const btn = document.getElementById('btnDelete');
   btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
-    await apiPost({ action: 'delete', id });
+    await apiPost({ action: 'delete', id: Number(id) });
     closeModal();
     showToast('Contatto eliminato con successo', 3000, 'success');
-    await loadData();
+    updateLocalData(allContacts.filter(c => String(c.id) !== String(id)), categories);
   } catch (e) {
     showToast('Errore eliminazione: ' + e.message, 4000, 'error');
   } finally {
@@ -1324,6 +1356,7 @@ async function saveCatChanges() {
   const btn = document.getElementById('btnCatSave');
   btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
+    // ── Chiamate API sequenziali ──────────────────────────────────────────────
     for (const nc of catPendingNew) {
       const r = await apiPost({ action: 'addCategoria', nome: formatCatName(nc.nome) });
       if (r.error) throw new Error(r.error);
@@ -1336,9 +1369,29 @@ async function saveCatChanges() {
       const r = await apiPost({ action: 'eliminaCategoria', nome: c.nome });
       if (r.error) throw new Error(r.error);
     }
+
+    // ── Aggiorna array locale senza ricaricare da GAS ─────────────────────────
+    let updatedCats     = [...categories];
+    let updatedContacts = [...allContacts];
+
+    // Rinomina: aggiorna categorie e contatti
+    for (const c of renames) {
+      const newNome = formatCatName(c.editNome);
+      updatedCats     = updatedCats.map(cat  => cat.nome === c.nome  ? { ...cat,  nome: newNome } : cat);
+      updatedContacts = updatedContacts.map(cont => cont.categoria === c.nome ? { ...cont, categoria: newNome } : cont);
+    }
+    // Nuove categorie: id temporaneo, viene corretto al prossimo load
+    const maxOrd = updatedCats.reduce((m, c) => Math.max(m, c.ordine || 0), 0);
+    catPendingNew.forEach((nc, i) => {
+      updatedCats.push({ id: Date.now() + i, nome: formatCatName(nc.nome), ordine: maxOrd + i + 1 });
+    });
+    // Elimina
+    const deletedNames = catPending.filter(c => c.deleted).map(c => c.nome);
+    updatedCats = updatedCats.filter(cat => !deletedNames.includes(cat.nome));
+
     document.getElementById('catModalOverlay').hidden = true;
     showToast('Categorie aggiornate con successo', 3000, 'success');
-    await loadData();
+    updateLocalData(updatedContacts, updatedCats);
   } catch (e) {
     showToast('Errore: ' + e.message, 5000, 'error');
   } finally {

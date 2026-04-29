@@ -349,6 +349,14 @@
     }
     .state-msg .ico { margin-bottom: .5rem; }
     .state-msg .sub { font-size: .8rem; margin-top: .35rem; opacity: .6; }
+    .load-counter {
+      margin-top: .6rem;
+      font-size: .8rem;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .02em;
+      opacity: .75;
+      min-height: 1.2em;
+    }
     .spinner {
       width: 22px; height: 22px;
       border: 1.5px solid var(--border);
@@ -802,10 +810,37 @@ async function loadData() {
 
     if (!usedCache) {
       // Cache scaduta o assente: scarica tutto e salva
+
+      // ── Contatore animato ───────────────────────────────────────────────────
+      let counterInterval = null;
+      let displayed = 0;
+
+      // getCount parte in parallelo: è leggero e arriva prima di getAll
+      apiFetch('getCount').then(r => {
+        const total = r.count || 0;
+        if (!total) return;
+        const el = document.getElementById('loadCounter');
+        if (el) el.textContent = `0 / ${total} contatti`;
+        // Avanza ~1 contatto ogni 30 ms, senza mai superare total - 1
+        counterInterval = setInterval(() => {
+          if (displayed < total - 1) {
+            displayed++;
+            const el2 = document.getElementById('loadCounter');
+            if (el2) el2.textContent = `${displayed} / ${total} contatti`;
+          }
+        }, 30);
+      }).catch(() => {});
+
       const [contacts, cats] = await Promise.all([
         apiFetch('getAll'),
         apiFetch('getCategorie'),
       ]);
+
+      // Ferma l'animazione e mostra il totale reale
+      if (counterInterval) clearInterval(counterInterval);
+      const finalEl = document.getElementById('loadCounter');
+      if (finalEl) finalEl.textContent = `${contacts.length} / ${contacts.length} contatti`;
+
       allContacts = sortContacts(contacts);
       categories  = cats;
 
@@ -815,7 +850,6 @@ async function loadData() {
         localStorage.setItem(LS_TS,   String(remoteTs2.ts));
         localStorage.setItem(LS_DATA, JSON.stringify(contacts));
         localStorage.setItem(LS_CATS, JSON.stringify(cats));
-
       } catch (_) { /* salvataggio cache non critico */ }
     }
 
@@ -942,7 +976,7 @@ function renderContacts(contacts) {
 
 function showLoading() {
   document.getElementById('contactList').innerHTML =
-    '<div class="state-msg"><div class="spinner"></div><div>Caricamento...</div></div>';
+    '<div class="state-msg"><div class="spinner"></div><div>Caricamento...</div><div id="loadCounter" class="load-counter"></div></div>';
   updateCount(null);
 }
 function showError(msg) {

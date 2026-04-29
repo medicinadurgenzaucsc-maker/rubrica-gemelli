@@ -43,6 +43,7 @@ function doGet(e) {
     else if (a === 'getCategorie')        result = getCategorie();
     else if (a === 'getCategorieConCount') result = getCategorieConCount();
     else if (a === 'getTimestamp')         result = getTimestamp();
+    else if (a === 'getCount')             result = getCount();
     else result = { error: 'unknown action' };
   } catch (err) { result = { error: err.message }; }
   return ContentService.createTextOutput(JSON.stringify(result))
@@ -190,6 +191,13 @@ function eliminaCategoriaGS(nome) {
     if (vals[i][1] === nome) { catSheet.deleteRow(i + 1); updateTimestampCache(); return { success: true }; }
   }
   return { error: 'not_found' };
+}
+
+// ─── COUNT ───────────────────────────────────────────────────────────────────
+
+function getCount() {
+  const sheet = getSheet('Contatti');
+  return { count: Math.max(0, sheet.getLastRow() - 1) };
 }
 
 // ─── CACHE TIMESTAMP ─────────────────────────────────────────────────────────

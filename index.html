@@ -734,7 +734,8 @@
 </div>
 
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzCBaTVHVLRviELi21kH8FcPlsqrSxpIY-ZsYMbbQ-fQbpX7UcFLUx4yaqTse5ETxAc/exec';
+const SUPA_URL = 'https://nbbekxuvuarxkuvvvgbi.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iYmVreHV2dWFyeGt1dnZ2Z2JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NzU4NTksImV4cCI6MjA5MzI1MTg1OX0.KPYvlg1bken6Oux0XltZL-Ld0mwyXeS7oek4uZaQDW0';
 
 let allContacts = [];
 let categories  = [];
@@ -791,10 +792,11 @@ async function loadData() {
     let usedCache = false;
     try {
       setLoadingStatus('Verifica ultimo aggiornamento...');
-      const remoteTs = await apiFetch('getTimestamp');
+      const tsRows  = await supaFetch('update_cache?select=ts&id=eq.1');
+      const remoteTs = tsRows[0]?.ts || 0;
       const localTs  = parseInt(localStorage.getItem(LS_TS), 10) || 0;
 
-      if (remoteTs.ts && remoteTs.ts === localTs) {
+      if (remoteTs && remoteTs === localTs) {
         const cachedData = localStorage.getItem(LS_DATA);
         const cachedCats = localStorage.getItem(LS_CATS);
         if (cachedData && cachedCats) {
@@ -809,16 +811,17 @@ async function loadData() {
     if (!usedCache) {
       setLoadingStatus('Caricamento contatti dal database...');
       const [contacts, cats] = await Promise.all([
-        apiFetch('getAll'),
-        apiFetch('getCategorie'),
+        supaFetch('contatti?select=*'),
+        supaFetch('categorie?select=*&order=ordine'),
       ]);
       allContacts = sortContacts(contacts);
       categories  = cats;
 
       // Aggiorna timestamp locale dopo il fetch riuscito
       try {
-        const remoteTs2 = await apiFetch('getTimestamp');
-        localStorage.setItem(LS_TS,   String(remoteTs2.ts));
+        const tsRows2  = await supaFetch('update_cache?select=ts&id=eq.1');
+        const remoteTs2 = tsRows2[0]?.ts || 0;
+        localStorage.setItem(LS_TS,   String(remoteTs2));
         localStorage.setItem(LS_DATA, JSON.stringify(contacts));
         localStorage.setItem(LS_CATS, JSON.stringify(cats));
       } catch (_) { /* salvataggio cache non critico */ }
@@ -831,21 +834,23 @@ async function loadData() {
   }
 }
 
-// ── API ───────────────────────────────────────────────────────────────────────
-async function apiFetch(action, params = {}) {
-  const qs  = new URLSearchParams({ action, ...params }).toString();
-  const res = await fetch(`${GAS_URL}?${qs}`);
-  if (!res.ok) throw new Error('Errore rete (' + res.status + ')');
-  const json = await res.json();
-  if (json.error) throw new Error(json.error);
-  return json;
-}
-async function apiPost(body) {
-  const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(body) });
-  if (!res.ok) throw new Error('Errore rete (' + res.status + ')');
-  const json = await res.json();
-  if (json.error) throw new Error(json.error);
-  return json;
+// ── API Supabase ──────────────────────────────────────────────────────────────
+async function supaFetch(path, options = {}) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': `Bearer ${SUPA_KEY}`,
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.hint || 'Errore rete (' + res.status + ')');
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -1110,12 +1115,12 @@ function updateLocalData(contacts, cats) {
   renderChips();
   applyFilters();
   // Sincronizza timestamp e localStorage in background
-  apiFetch('getTimestamp').then(r => {
-    localStorage.setItem('rubrica-ts',   String(r.ts));
+  supaFetch('update_cache?select=ts&id=eq.1').then(rows => {
+    const ts = rows[0]?.ts || 0;
+    localStorage.setItem('rubrica-ts',   String(ts));
     localStorage.setItem('rubrica-data', JSON.stringify(contacts));
     localStorage.setItem('rubrica-cats', JSON.stringify(cats));
   }).catch(() => {
-    // Se fallisce, invalida la cache così il prossimo caricamento rilegge da GAS
     localStorage.removeItem('rubrica-ts');
   });
 }
@@ -1129,9 +1134,7 @@ async function saveContact() {
   if (!pairs) { showToast('Uno o più numeri contengono caratteri non validi (solo cifre)', 3500, 'warning'); return; }
   if (!pairs.numeri) { showToast('Inserisci almeno un numero', 3000, 'warning'); return; }
 
-  const data = {
-    action:    id ? 'update' : 'add',
-    ...(id && { id: Number(id) }),
+  const payload = {
     nome,
     categoria: document.getElementById('fCategoria').value,
     numeri:    pairs.numeri,
@@ -1140,22 +1143,29 @@ async function saveContact() {
   const btn = document.getElementById('btnSave');
   btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
-    const result = await apiPost(data);
-    closeModal();
     let updatedContacts;
     if (!id) {
-      // Nuovo contatto: aggiunge all'array con l'id restituito da GAS
-      updatedContacts = [...allContacts, { id: result.id, nome: data.nome, categoria: data.categoria, numeri: data.numeri, note: data.note }];
+      // Nuovo contatto
+      const rows = await supaFetch('contatti', {
+        method: 'POST',
+        headers: { 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload),
+      });
+      const newContact = rows[0];
+      updatedContacts = [...allContacts, newContact];
       showToast('Contatto aggiunto con successo', 3000, 'success');
     } else {
-      // Modifica: sostituisce il record esistente
+      // Modifica contatto esistente
+      await supaFetch(`contatti?id=eq.${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
       updatedContacts = allContacts.map(c =>
-        String(c.id) === String(id)
-          ? { ...c, nome: data.nome, categoria: data.categoria, numeri: data.numeri, note: data.note }
-          : c
+        String(c.id) === String(id) ? { ...c, ...payload } : c
       );
       showToast('Contatto aggiornato con successo', 3000, 'success');
     }
+    closeModal();
     updateLocalData(updatedContacts, categories);
   } catch (e) {
     showToast('Errore: ' + e.message, 4000, 'error');
@@ -1169,7 +1179,7 @@ async function deleteContact() {
   const btn = document.getElementById('btnDelete');
   btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
-    await apiPost({ action: 'delete', id: Number(id) });
+    await supaFetch(`contatti?id=eq.${id}`, { method: 'DELETE' });
     closeModal();
     showToast('Contatto eliminato con successo', 3000, 'success');
     updateLocalData(allContacts.filter(c => String(c.id) !== String(id)), categories);
@@ -1227,7 +1237,14 @@ async function openCatModal() {
   document.getElementById('catList').innerHTML =
     '<div style="text-align:center;padding:1.5rem 1rem"><div class="spinner"></div></div>';
   try {
-    catOriginal   = await apiFetch('getCategorieConCount');
+    const [cats, conts] = await Promise.all([
+      supaFetch('categorie?select=*&order=ordine'),
+      supaFetch('contatti?select=categoria'),
+    ]);
+    catOriginal = cats.map(c => ({
+      ...c,
+      count: conts.filter(x => x.categoria === c.nome).length,
+    }));
     catPending    = catOriginal.map(c => ({ ...c, editNome: c.nome, deleted: false }));
     catPendingNew = [];
     renderCatList();
@@ -1366,17 +1383,21 @@ async function saveCatChanges() {
   btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
     // ── Chiamate API sequenziali ──────────────────────────────────────────────
-    for (const nc of catPendingNew) {
-      const r = await apiPost({ action: 'addCategoria', nome: formatCatName(nc.nome) });
-      if (r.error) throw new Error(r.error);
+    const maxOrdSupa = categories.reduce((m, c) => Math.max(m, c.ordine || 0), 0);
+    for (const [i, nc] of catPendingNew.entries()) {
+      await supaFetch('categorie', {
+        method: 'POST',
+        body: JSON.stringify({ nome: formatCatName(nc.nome), ordine: maxOrdSupa + i + 1 }),
+      });
     }
     for (const c of renames) {
-      const r = await apiPost({ action: 'rinominaCategoria', oldNome: c.nome, newNome: formatCatName(c.editNome) });
-      if (r.error) throw new Error(r.error);
+      await supaFetch('rpc/rename_categoria', {
+        method: 'POST',
+        body: JSON.stringify({ old_nome: c.nome, new_nome: formatCatName(c.editNome) }),
+      });
     }
     for (const c of catPending.filter(c => c.deleted)) {
-      const r = await apiPost({ action: 'eliminaCategoria', nome: c.nome });
-      if (r.error) throw new Error(r.error);
+      await supaFetch('categorie?nome=eq.' + encodeURIComponent(c.nome), { method: 'DELETE' });
     }
 
     // ── Aggiorna array locale senza ricaricare da GAS ─────────────────────────

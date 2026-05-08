@@ -7,10 +7,12 @@ const SUPA_URL = 'https://nbbekxuvuarxkuvvvgbi.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iYmVreHV2dWFyeGt1dnZ2Z2JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NzU4NTksImV4cCI6MjA5MzI1MTg1OX0.KPYvlg1bken6Oux0XltZL-Ld0mwyXeS7oek4uZaQDW0';
 
 // ── Costanti ─────────────────────────────────────────────────────────────────
-const LS_DATA  = 'rubrica-data';
-const LS_CATS  = 'rubrica-cats';
-const LS_TS    = 'rubrica-ts';
-const LS_THEME = 'rubrica-theme';
+const LS_DATA    = 'rubrica-data';
+const LS_CATS    = 'rubrica-cats';
+const LS_TS      = 'rubrica-ts';
+const LS_THEME   = 'rubrica-theme';
+const LS_RECENT  = 'rubrica-recent-searches';
+const MAX_RECENT = 5;
 const ALPHA_KEYS = ['0-9', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
 const TRASH_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
 const EDIT_SVG  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
@@ -21,6 +23,7 @@ const D = {};
 function cacheDOM() {
   [
     'contactList','countLabel','searchBar','searchWrap','btnSearchClear',
+    'searchSuggestions',
     'btnTheme','btnInstall','btnSettings','btnAll','btnAlpha','btnNew',
     'chips','installToast',
     'modalOverlay','modalTitle','modalBox','contactForm',
@@ -29,6 +32,7 @@ function cacheDOM() {
     'catModalOverlay','catModalBox','catList','fNewCat','btnAddCat',
     'btnCatCancel','btnCatSave',
     'alphaModalOverlay','alphaGrid','btnAlphaClose',
+    'numMenuOverlay','numMenuTitle','numMenuSub',
   ].forEach(id => { D[id] = $(id); });
 }
 
@@ -79,6 +83,70 @@ function debounce(fn, ms) {
 function formatCatName(s) {
   return s.replace(/[^a-zA-ZÀ-ÿ0-9 \-_.]/g, '').toUpperCase().trim();
 }
+
+// ── Avatar: hash colore stabile dalla categoria ──────────────────────────────
+function hashHue(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffff;
+  return Math.abs(h) % 360;
+}
+function avatarStyle(categoria) {
+  const hue = hashHue(String(categoria || ''));
+  return `background:hsl(${hue} 55% 42%)`;
+}
+function avatarLetter(nome) {
+  const s = String(nome || '').trim();
+  return s ? s[0].toUpperCase() : '?';
+}
+
+// ── Highlight match nei risultati ────────────────────────────────────────────
+function escRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// `text` viene già escaped; tokens sono in lowercase. Wrappa i match in <mark>.
+function highlight(text, tokens) {
+  if (!text || !tokens || !tokens.length) return text;
+  // Costruisce una regex unica per tutti i token, case-insensitive
+  const re = new RegExp('(' + tokens.map(escRegex).join('|') + ')', 'gi');
+  return text.replace(re, '<mark>$1</mark>');
+}
+
+// ── Haptic feedback ──────────────────────────────────────────────────────────
+function haptic(pattern = 8) {
+  if ('vibrate' in navigator) navigator.vibrate(pattern);
+}
+
+// ── Ricerche recenti (localStorage) ──────────────────────────────────────────
+function getRecentSearches() {
+  try { return JSON.parse(localStorage.getItem(LS_RECENT)) || []; } catch { return []; }
+}
+function pushRecentSearch(q) {
+  q = String(q || '').trim();
+  if (!q || q.length < 2) return;
+  let arr = getRecentSearches().filter(x => x.toLowerCase() !== q.toLowerCase());
+  arr.unshift(q);
+  arr = arr.slice(0, MAX_RECENT);
+  localStorage.setItem(LS_RECENT, JSON.stringify(arr));
+}
+function removeRecentSearch(q) {
+  const arr = getRecentSearches().filter(x => x !== q);
+  localStorage.setItem(LS_RECENT, JSON.stringify(arr));
+}
+function renderRecentSuggestions() {
+  const arr = getRecentSearches();
+  if (!arr.length || activeSearch || document.activeElement !== D.searchBar) {
+    D.searchSuggestions.hidden = true;
+    return;
+  }
+  D.searchSuggestions.innerHTML = arr.map(q =>
+    `<button class="search-suggestion" data-q="${esc(q)}" type="button">
+       <span>${esc(q)}</span><span class="sug-x" data-x="${esc(q)}">×</span>
+     </button>`
+  ).join('');
+  D.searchSuggestions.hidden = false;
+}
+
+// ── Salvataggio scroll position fra modal e ritorno ──────────────────────────
+let savedScrollY = 0;
 
 // ── Ordinamento + memoization haystack ───────────────────────────────────────
 // Aggiunge un campo `_search` precalcolato per evitare di ricomputarlo ad ogni filtro
@@ -205,24 +273,37 @@ function smartSearch(contacts, rawQuery) {
   return [...tier1, ...tier2, ...tier3];
 }
 
-// ── Render contatti con DocumentFragment + event delegation ──────────────────
+// ── Render contatti con avatar + highlight ──────────────────────────────────
 function renderContacts(contacts) {
   updateCount(contacts.length);
   if (!contacts.length) {
     D.contactList.innerHTML = '<div class="state-msg"><div class="ico">∅</div><div>Nessun risultato</div></div>';
     return;
   }
-  // Costruisce HTML in stringa (più veloce di nodi DOM creati uno a uno con createElement)
+
+  // Tokens per highlighting (solo se c'è ricerca attiva)
+  const searchTokens = activeSearch
+    ? activeSearch.split(/\s+/).filter(t => t.length >= 2)
+    : null;
+
   const html = contacts.map(c => {
+    const nome = esc(String(c.nome));
+    const nomeH = searchTokens ? highlight(nome, searchTokens) : nome;
     const nums  = String(c.numeri || '').split('|').map(n => n.trim()).filter(Boolean);
     const notes = String(c.note   || '').split('|');
+
     const groups = nums.map((n, i) => {
-      const nota = (notes[i] || '').trim();
-      return `<span class="num-group"><a class="num-pill" href="tel:${n}">${n}</a>${nota ? `<span class="num-nota-inline">${esc(nota)}</span>` : ''}</span>`;
+      const nota   = (notes[i] || '').trim();
+      const nEsc   = esc(n);
+      const nH     = searchTokens ? highlight(nEsc, searchTokens) : nEsc;
+      const notaH  = nota ? (searchTokens ? highlight(esc(nota), searchTokens) : esc(nota)) : '';
+      return `<span class="num-group"><a class="num-pill" href="tel:${n}" data-num="${esc(n)}" data-nome="${esc(c.nome)}">${nH}</a>${nota ? `<span class="num-nota-inline">${notaH}</span>` : ''}</span>`;
     }).join('');
+
     return `<div class="contact-card" data-id="${c.id}">
-      <div class="contact-info">
-        <div class="contact-name">${esc(String(c.nome))}</div>
+      <div class="contact-avatar" style="${avatarStyle(c.categoria)}" aria-hidden="true">${avatarLetter(c.nome)}</div>
+      <div class="contact-info" data-id="${c.id}">
+        <div class="contact-name">${nomeH}</div>
         <div class="contact-numbers">${groups}</div>
         <div class="contact-cat">${esc(String(c.categoria))}</div>
       </div>
@@ -230,7 +311,6 @@ function renderContacts(contacts) {
     </div>`;
   }).join('');
   D.contactList.innerHTML = html;
-  // Event delegation: 1 listener invece di N
 }
 
 function showLoading() {
@@ -260,10 +340,16 @@ function setupEvents() {
   });
 
   // Search debounced
-  const debouncedFilter = debounce(() => applyFilters(), 120);
+  const debouncedFilter = debounce(() => {
+    applyFilters();
+    // Aggiungi alle recenti dopo che l'utente ha smesso di scrivere (se ha trovato qualcosa)
+    if (activeSearch && activeSearch.length >= 2) pushRecentSearch(activeSearch);
+  }, 400);
   D.searchBar.addEventListener('input', e => {
     activeSearch = e.target.value.toLowerCase().trim();
     D.searchWrap.classList.toggle('has-text', !!activeSearch);
+    if (!activeSearch) renderRecentSuggestions();
+    else D.searchSuggestions.hidden = true;
     debouncedFilter();
   });
   D.btnSearchClear.addEventListener('click', () => {
@@ -328,22 +414,172 @@ function setupEvents() {
     const editBtn = e.target.closest('.btn-edit');
     if (editBtn) {
       e.stopPropagation();
+      haptic(8);
       openEdit(editBtn.dataset.id);
       return;
     }
-    // (i tap-to-call sono <a href="tel:..."> nativi, non serve altro)
+    // Tap su area info (nome) → apre modal modifica
+    const info = e.target.closest('.contact-info');
+    if (info) {
+      // Solo se NON è un tap su <a> (numero) o long-press in corso
+      const isNum = e.target.closest('.num-pill');
+      if (!isNum && !longPressTriggered) {
+        haptic(8);
+        openEdit(info.dataset.id);
+      }
+      return;
+    }
+    // Tap diretto sul numero → haptic + lascia link nativo tel:
+    if (e.target.closest('.num-pill') && !longPressTriggered) {
+      haptic(12);
+    }
   });
+
+  // ── Long-press su numero → menu copia/condividi ──────────────────────────
+  setupLongPress();
 
   // ── Event delegation: chips categorie ─────────────────────────────────────
   D.chips.addEventListener('click', e => {
     const chip = e.target.closest('.chip');
     if (!chip) return;
+    haptic(8);
     const cat = chip.dataset.cat;
     activeCategory = activeCategory === cat ? null : cat;
     document.querySelectorAll('.chip').forEach(b => b.classList.toggle('active', b.dataset.cat === activeCategory));
     D.btnAll.classList.toggle('active', !activeCategory);
     applyFilters();
   });
+
+  // ── Suggerimenti ricerca recenti ──────────────────────────────────────────
+  D.searchBar.addEventListener('focus', renderRecentSuggestions);
+  D.searchBar.addEventListener('blur',  () => {
+    // Delay per permettere il click sul suggerimento
+    setTimeout(() => { D.searchSuggestions.hidden = true; }, 150);
+  });
+  D.searchBar.addEventListener('change', () => {
+    if (activeSearch) pushRecentSearch(activeSearch);
+  });
+  D.searchSuggestions.addEventListener('click', e => {
+    const x = e.target.closest('[data-x]');
+    if (x) {
+      e.stopPropagation();
+      removeRecentSearch(x.dataset.x);
+      renderRecentSuggestions();
+      return;
+    }
+    const sug = e.target.closest('.search-suggestion');
+    if (sug) {
+      const q = sug.dataset.q;
+      D.searchBar.value = q;
+      activeSearch = q.toLowerCase();
+      D.searchWrap.classList.add('has-text');
+      D.searchSuggestions.hidden = true;
+      pushRecentSearch(q);
+      applyFilters();
+    }
+  });
+
+  // ── Menu numero: azioni ───────────────────────────────────────────────────
+  D.numMenuOverlay.addEventListener('click', e => {
+    if (e.target === D.numMenuOverlay) closeNumMenu();
+    const action = e.target.closest('[data-action]');
+    if (!action) return;
+    handleNumMenuAction(action.dataset.action);
+  });
+
+  // Salva scroll position prima di aprire un modal
+  document.addEventListener('focusin', () => {});
+}
+
+// ── Long press detection ──────────────────────────────────────────────────────
+let longPressTimer = null;
+let longPressTriggered = false;
+let longPressNum  = '';
+let longPressNome = '';
+function setupLongPress() {
+  D.contactList.addEventListener('pointerdown', e => {
+    const a = e.target.closest('.num-pill');
+    if (!a) return;
+    longPressTriggered = false;
+    longPressNum  = a.dataset.num || a.textContent.trim();
+    longPressNome = a.dataset.nome || '';
+    clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      haptic([15, 30, 15]);
+      openNumMenu(longPressNum, longPressNome);
+    }, 500);
+  });
+  const cancel = () => { clearTimeout(longPressTimer); };
+  D.contactList.addEventListener('pointerup',     cancel);
+  D.contactList.addEventListener('pointerleave',  cancel);
+  D.contactList.addEventListener('pointercancel', cancel);
+  D.contactList.addEventListener('pointermove', e => {
+    if (Math.abs(e.movementX) + Math.abs(e.movementY) > 5) cancel();
+  });
+  // Quando si attiva il long-press, blocca il click successivo che farebbe la chiamata
+  D.contactList.addEventListener('click', e => {
+    if (longPressTriggered) {
+      e.preventDefault();
+      e.stopPropagation();
+      // reset al prossimo evento
+      setTimeout(() => { longPressTriggered = false; }, 50);
+    }
+  }, true);
+}
+
+function openNumMenu(num, nome) {
+  D.numMenuTitle.textContent = num;
+  D.numMenuSub.textContent   = nome || '';
+  D.numMenuOverlay.hidden = false;
+}
+function closeNumMenu() {
+  D.numMenuOverlay.hidden = true;
+}
+async function handleNumMenuAction(action) {
+  const num  = D.numMenuTitle.textContent;
+  const nome = D.numMenuSub.textContent;
+  closeNumMenu();
+  haptic(8);
+  switch (action) {
+    case 'call':
+      window.location.href = `tel:${num}`;
+      break;
+    case 'copy':
+      await copyText(num);
+      showToast('Numero copiato', 2000, 'success');
+      break;
+    case 'copy-full':
+      await copyText(`${nome}: ${num}`);
+      showToast('Copiato negli appunti', 2000, 'success');
+      break;
+    case 'share':
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: nome, text: `${nome}: ${num}` });
+        } catch (_) {}
+      } else {
+        await copyText(`${nome}: ${num}`);
+        showToast('Condivisione non supportata — copiato', 3000);
+      }
+      break;
+    case 'close':
+      break;
+  }
+}
+async function copyText(text) {
+  if (navigator.clipboard) {
+    try { await navigator.clipboard.writeText(text); return; } catch (_) {}
+  }
+  // Fallback
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (_) {}
+  ta.remove();
 }
 
 // ── Modal contatto ───────────────────────────────────────────────────────────
@@ -400,6 +636,9 @@ function collectPairs() {
 }
 
 function openModal(contact) {
+  // Salva scroll position per ripristinarla alla chiusura
+  savedScrollY = window.scrollY;
+
   const isNew = !contact;
   D.modalTitle.textContent = isNew ? 'Nuovo Contatto' : 'Modifica Contatto';
   D.fId.value   = contact?.id ?? '';
@@ -425,7 +664,13 @@ function openEdit(id) {
   const c = allContacts.find(x => String(x.id) === String(id));
   if (c) openModal(c);
 }
-function closeModal() { D.modalOverlay.hidden = true; }
+function closeModal() {
+  D.modalOverlay.hidden = true;
+  // Ripristina scroll position
+  if (savedScrollY) {
+    requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+  }
+}
 
 // ── Cache locale post-mutazione ──────────────────────────────────────────────
 function updateLocalData(contacts, cats) {
@@ -806,9 +1051,20 @@ function setStarDone() {
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-  // Setup install button (dopo DOM pronto)
+document.addEventListener('DOMContentLoaded', async () => {
+  await init();
+
+  // Gestione shortcuts PWA (?action=new | ?action=search)
+  const params = new URLSearchParams(location.search);
+  const action = params.get('action');
+  if (action === 'new')         setTimeout(() => openModal(null), 100);
+  else if (action === 'search') setTimeout(() => D.searchBar.focus(), 100);
+  if (action) {
+    // Pulisce l'URL senza ricaricare
+    history.replaceState(null, '', location.pathname);
+  }
+
+  // Setup install button
   D.btnInstall.addEventListener('click', async () => {
     if (isInStandalone) { showToast('App già installata sulla schermata Home'); return; }
     if (installPrompt) {

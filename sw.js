@@ -1,35 +1,67 @@
-const CACHE = 'rubrica-v3';
-const STATIC = ['./manifest.json', './icon.svg'];
+// Service Worker — Rubrica Gemelli v4
+const CACHE = 'rubrica-v4';
+const SUPA_HOST = 'nbbekxuvuarxkuvvvgbi.supabase.co';
+const STATIC = [
+  './manifest.json',
+  './icon.svg',
+  './app.css',
+  './app.js',
+];
 
+// ── Install: precache assets statici ─────────────────────────────────────────
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)));
-  self.skipWaiting();
+  // NB: non chiamiamo skipWaiting qui — lo facciamo solo quando l'utente
+  // accetta l'aggiornamento via postMessage (vedi handler 'message')
 });
 
+// ── Activate: pulizia vecchie cache ──────────────────────────────────────────
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener('fetch', e => {
-  const url = e.request.url;
+// ── Messaggio da client: l'utente ha cliccato "Ricarica" ─────────────────────
+self.addEventListener('message', e => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
+});
 
-  // Richieste GAS: solo rete, fallback errore offline
-  if (url.includes('script.google.com')) {
-    e.respondWith(
-      fetch(e.request).catch(() =>
-        new Response('{"error":"offline"}', { headers: { 'Content-Type': 'application/json' } })
-      )
-    );
-    return;
+// ── Fetch handler ────────────────────────────────────────────────────────────
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // ── Supabase ───────────────────────────────────────────────────────────────
+  if (url.host === SUPA_HOST) {
+    // update_cache: SEMPRE rete, mai cache (è il timestamp)
+    if (url.pathname.includes('update_cache')) return;
+
+    // Mutazioni (POST/PATCH/DELETE) e RPC: sempre rete, mai cache
+    if (e.request.method !== 'GET') return;
+
+    // GET contatti/categorie: stale-while-revalidate
+    if (url.pathname.endsWith('/contatti') || url.pathname.endsWith('/categorie')) {
+      e.respondWith(
+        caches.open(CACHE).then(async cache => {
+          const cached = await cache.match(e.request);
+          const network = fetch(e.request).then(res => {
+            if (res.ok) cache.put(e.request, res.clone());
+            return res;
+          }).catch(() => cached);
+          return cached || network;
+        })
+      );
+      return;
+    }
+    return; // tutto il resto su Supabase: rete diretta
   }
 
-  // index.html e navigazione: SEMPRE rete prima, cache solo se offline
+  // ── HTML / navigazione: rete prima, cache fallback ───────────────────────
   if (e.request.mode === 'navigate' ||
-      url.endsWith('.html') ||
-      url.endsWith('/')) {
+      url.pathname.endsWith('.html') ||
+      url.pathname.endsWith('/')) {
     e.respondWith(
       fetch(e.request).then(res => {
         const clone = res.clone();
@@ -40,8 +72,14 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Asset statici (icon, manifest): cache first
+  // ── Asset statici (CSS/JS/icon/manifest): cache first, fallback rete ─────
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        return res;
+      });
+    })
   );
 });

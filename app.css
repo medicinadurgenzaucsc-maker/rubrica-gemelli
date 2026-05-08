@@ -706,6 +706,114 @@ main { padding: .75rem 0; }
 }
 .search-suggestion .sug-x:hover { opacity: 1; color: #ef4444; }
 
+/* Pull-to-refresh indicator */
+#ptrIndicator {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  z-index: 99;
+  overflow: hidden;
+  pointer-events: none;
+  transition: height .18s ease-out;
+}
+#ptrIndicator.armed { color: var(--accent); }
+.ptr-spinner {
+  width: 22px; height: 22px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+}
+#ptrIndicator.spin .ptr-spinner { animation: spin .75s linear infinite; }
+#ptrIndicator.armed .ptr-spinner { border-top-color: var(--accent); border-color: var(--accent); border-top-color: transparent; transform: rotate(180deg); }
+
+/* Modal drag handle bar (per drag-to-close) */
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: -.6rem auto .85rem;
+  cursor: grab;
+  flex-shrink: 0;
+  touch-action: none;
+}
+.modal-handle:active { cursor: grabbing; background: var(--muted); }
+
+/* Stella preferiti */
+.contact-fav-star {
+  display: inline-flex;
+  align-items: center;
+  margin-right: .25rem;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+.contact-name {
+  display: flex;
+  align-items: center;
+}
+.contact-name-text { flex: 1; min-width: 0; word-break: break-word; }
+
+/* Chip speciali (Preferiti / Recenti) */
+.chip-special {
+  background: var(--num-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.chip-special.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Sezione esportazione nel modal categorie */
+.cat-export-section {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+}
+.cat-export-section .label {
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .5rem;
+}
+.cat-export-row {
+  display: flex;
+  gap: .5rem;
+}
+.cat-export-row button {
+  flex: 1;
+  padding: .65rem .75rem;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  min-height: 40px;
+  transition: all .12s;
+}
+.cat-export-row button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Tema toggle a 3 stati: il pulsante mostra il tema attuale */
+.btn-icon[data-theme-mode="dark"]::before  { content: "🌙"; font-size: .85rem; }
+.btn-icon[data-theme-mode="light"]::before { content: "☀"; font-size: .9rem; }
+.btn-icon[data-theme-mode="auto"]::before  { content: "◐"; font-size: .85rem; }
+#btnTheme { font-size: 0; }
+
 /* Menu long-press numero */
 #numMenuOverlay {
   position: fixed;

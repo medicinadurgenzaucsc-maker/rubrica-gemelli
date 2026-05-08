@@ -5,14 +5,32 @@
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
-  "background_color": "#1e40af",
-  "theme_color": "#1e40af",
+  "orientation": "portrait",
+  "background_color": "#0c0c0c",
+  "theme_color": "#0c0c0c",
+  "categories": ["medical", "productivity", "utilities"],
   "icons": [
     {
       "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuovo contatto",
+      "short_name": "Nuovo",
+      "description": "Aggiungi un nuovo contatto",
+      "url": "./?action=new",
+      "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Cerca",
+      "short_name": "Cerca",
+      "description": "Cerca un contatto",
+      "url": "./?action=search",
+      "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]
 }

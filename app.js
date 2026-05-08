@@ -12,7 +12,12 @@ const LS_CATS    = 'rubrica-cats';
 const LS_TS      = 'rubrica-ts';
 const LS_THEME   = 'rubrica-theme';
 const LS_RECENT  = 'rubrica-recent-searches';
+const LS_FAVS    = 'rubrica-favs';
+const LS_CALLS   = 'rubrica-recent-calls';
+const LS_QUEUE   = 'rubrica-pending-writes';
 const MAX_RECENT = 5;
+const MAX_CALLS  = 8;
+const STAR_SVG   = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 const ALPHA_KEYS = ['0-9', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
 const TRASH_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
 const EDIT_SVG  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
@@ -43,34 +48,43 @@ let activeCategory = null;
 let activeSearch   = '';
 let activeAlpha    = null;
 
-// ── Tema ─────────────────────────────────────────────────────────────────────
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  if (D.btnTheme) D.btnTheme.textContent = '◐';
-  // Aggiorna meta theme-color in base al tema
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', theme === 'dark' ? '#0c0c0c' : '#ffffff');
-  localStorage.setItem(LS_THEME, theme);
-}
+// ── Tema (vedi sotto: implementazione 3-stati con auto/system) ──────────────
+// Le funzioni applyTheme + cycleTheme sono definite più giù insieme alle costanti
 
-// ── API Supabase ─────────────────────────────────────────────────────────────
-async function supaFetch(path, options = {}) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    ...options,
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': `Bearer ${SUPA_KEY}`,
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.hint || 'Errore rete (' + res.status + ')');
+// ── API Supabase con retry esponenziale ─────────────────────────────────────
+async function supaFetch(path, options = {}, retryCount = 0) {
+  const MAX_RETRIES = 2;
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+      ...options,
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+    });
+    if (!res.ok) {
+      // 5xx = retry, 4xx = errore vero
+      if (res.status >= 500 && retryCount < MAX_RETRIES) {
+        await sleep(200 * Math.pow(2, retryCount));
+        return supaFetch(path, options, retryCount + 1);
+      }
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.hint || 'Errore rete (' + res.status + ')');
+    }
+    const text = await res.text();
+    return text ? JSON.parse(text) : [];
+  } catch (e) {
+    // Errore di rete (TypeError) → retry se siamo entro la soglia
+    if (e.name === 'TypeError' && retryCount < MAX_RETRIES) {
+      await sleep(200 * Math.pow(2, retryCount));
+      return supaFetch(path, options, retryCount + 1);
+    }
+    throw e;
   }
-  const text = await res.text();
-  return text ? JSON.parse(text) : [];
 }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function esc(s) {
@@ -148,6 +162,263 @@ function renderRecentSuggestions() {
 // ── Salvataggio scroll position fra modal e ritorno ──────────────────────────
 let savedScrollY = 0;
 
+// ── Preferiti (★) ────────────────────────────────────────────────────────────
+function getFavs() {
+  try { return new Set(JSON.parse(localStorage.getItem(LS_FAVS)) || []); } catch { return new Set(); }
+}
+function setFavs(set) {
+  localStorage.setItem(LS_FAVS, JSON.stringify([...set]));
+}
+function isFav(id) { return favs.has(String(id)); }
+function toggleFav(id) {
+  id = String(id);
+  if (favs.has(id)) favs.delete(id); else favs.add(id);
+  setFavs(favs);
+}
+let favs = getFavs();
+
+// ── Recenti chiamati ─────────────────────────────────────────────────────────
+function getRecentCalls() {
+  try { return JSON.parse(localStorage.getItem(LS_CALLS)) || []; } catch { return []; }
+}
+function pushRecentCall(id) {
+  if (!id) return;
+  let arr = getRecentCalls().filter(x => String(x) !== String(id));
+  arr.unshift(String(id));
+  arr = arr.slice(0, MAX_CALLS);
+  localStorage.setItem(LS_CALLS, JSON.stringify(arr));
+}
+
+// ── Filtri speciali (Preferiti / Recenti chiamati) ───────────────────────────
+let activeSpecial = null; // 'fav' | 'recent' | null
+
+// ── Tema con 3 stati: dark / light / auto ────────────────────────────────────
+let mediaQ = window.matchMedia('(prefers-color-scheme: dark)');
+function resolveTheme(mode) {
+  if (mode === 'auto') return mediaQ.matches ? 'dark' : 'light';
+  return mode;
+}
+function applyTheme(mode) {
+  const resolved = resolveTheme(mode);
+  document.documentElement.setAttribute('data-theme', resolved);
+  if (D.btnTheme) D.btnTheme.dataset.themeMode = mode;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0c0c0c' : '#ffffff');
+  localStorage.setItem(LS_THEME, mode);
+}
+function cycleTheme() {
+  const cur = localStorage.getItem(LS_THEME) || 'dark';
+  const next = cur === 'dark' ? 'light' : (cur === 'light' ? 'auto' : 'dark');
+  applyTheme(next);
+  showToast('Tema: ' + (next === 'auto' ? 'automatico' : next), 1500);
+}
+mediaQ.addEventListener('change', () => {
+  if ((localStorage.getItem(LS_THEME) || 'dark') === 'auto') applyTheme('auto');
+});
+
+// ── Coda mutazioni offline ───────────────────────────────────────────────────
+function getQueue() {
+  try { return JSON.parse(localStorage.getItem(LS_QUEUE)) || []; } catch { return []; }
+}
+function setQueue(q) { localStorage.setItem(LS_QUEUE, JSON.stringify(q)); }
+function enqueue(op) {
+  const q = getQueue();
+  q.push({ ...op, ts: Date.now(), attempts: 0 });
+  setQueue(q);
+}
+async function drainQueue() {
+  const q = getQueue();
+  if (!q.length) return;
+  showToast(`Sincronizzo ${q.length} modific${q.length === 1 ? 'a' : 'he'} in sospeso...`, 2500);
+  const remaining = [];
+  for (const op of q) {
+    try {
+      await supaFetch(op.path, op.options);
+    } catch (_) {
+      op.attempts++;
+      if (op.attempts < 5) remaining.push(op);
+    }
+  }
+  setQueue(remaining);
+  if (!remaining.length) {
+    showToast('Modifiche sincronizzate', 2000, 'success');
+    loadData(); // ricarica per riallineare ID e timestamp
+  }
+}
+window.addEventListener('online', drainQueue);
+
+// ── Focus trap nei modal ─────────────────────────────────────────────────────
+let activeModal = null;
+let lastFocused = null;
+const FOCUSABLE = 'button:not([hidden]), [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])';
+function trapFocus(modalEl) {
+  activeModal = modalEl;
+  lastFocused = document.activeElement;
+  const handler = e => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeActiveModal();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const els = [...modalEl.querySelectorAll(FOCUSABLE)].filter(el => !el.disabled && el.offsetParent !== null);
+    if (!els.length) return;
+    const first = els[0], last = els[els.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  modalEl._trapHandler = handler;
+  document.addEventListener('keydown', handler);
+}
+function releaseFocus(modalEl) {
+  if (modalEl?._trapHandler) {
+    document.removeEventListener('keydown', modalEl._trapHandler);
+    modalEl._trapHandler = null;
+  }
+  activeModal = null;
+  if (lastFocused?.focus) lastFocused.focus();
+  lastFocused = null;
+}
+function closeActiveModal() {
+  if (!activeModal) return;
+  if (activeModal === D.modalOverlay) closeModal();
+  else if (activeModal === D.catModalOverlay) closeCatModal();
+  else if (activeModal === D.alphaModalOverlay) D.alphaModalOverlay.hidden = true;
+  else if (activeModal === D.numMenuOverlay)   closeNumMenu();
+}
+
+// ── Esportazione CSV / vCard ─────────────────────────────────────────────────
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function csvEscape(s) {
+  s = String(s == null ? '' : s);
+  if (/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function exportCSV() {
+  const rows = ['nome,categoria,numeri,note'];
+  for (const c of allContacts) {
+    rows.push([c.nome, c.categoria, c.numeri, c.note].map(csvEscape).join(','));
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  downloadFile(`rubrica-gemelli-${today}.csv`, rows.join('\n'), 'text/csv;charset=utf-8');
+  showToast('CSV esportato', 2000, 'success');
+}
+function exportVCF() {
+  const lines = [];
+  for (const c of allContacts) {
+    const nums  = String(c.numeri || '').split('|').map(s => s.trim()).filter(Boolean);
+    const notes = String(c.note   || '').split('|');
+    lines.push('BEGIN:VCARD');
+    lines.push('VERSION:3.0');
+    lines.push(`FN:${c.nome}`);
+    lines.push(`ORG:${c.categoria}`);
+    nums.forEach((n, i) => {
+      const nota = (notes[i] || '').trim();
+      lines.push(`TEL;TYPE=WORK${nota ? ';X-LABEL=' + nota : ''}:${n}`);
+    });
+    lines.push('END:VCARD');
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  downloadFile(`rubrica-gemelli-${today}.vcf`, lines.join('\r\n'), 'text/vcard;charset=utf-8');
+  showToast('vCard esportata', 2000, 'success');
+}
+
+// ── Pull-to-refresh ──────────────────────────────────────────────────────────
+function setupPullToRefresh() {
+  const indicator = $('ptrIndicator');
+  if (!indicator) return;
+  const THRESHOLD = 70;
+  let startY = 0, pulling = false, pulled = 0;
+
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY > 0) return;
+    if (D.modalOverlay && !D.modalOverlay.hidden) return;
+    if (D.catModalOverlay && !D.catModalOverlay.hidden) return;
+    if (D.alphaModalOverlay && !D.alphaModalOverlay.hidden) return;
+    startY = e.touches[0].clientY;
+    pulling = true; pulled = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0) { pulled = 0; indicator.style.height = '0px'; indicator.classList.remove('armed'); return; }
+    pulled = Math.min(dy, THRESHOLD * 1.5);
+    indicator.style.height = `${Math.min(pulled * 0.7, 60)}px`;
+    indicator.classList.toggle('armed', pulled >= THRESHOLD);
+  }, { passive: true });
+
+  document.addEventListener('touchend', async () => {
+    if (!pulling) return;
+    pulling = false;
+    if (pulled >= THRESHOLD) {
+      indicator.classList.add('spin');
+      indicator.style.height = '60px';
+      haptic([15, 30, 15]);
+      // Forza ricarica da DB ignorando cache locale
+      localStorage.removeItem(LS_TS);
+      try { await loadData(); } catch (_) {}
+    }
+    indicator.classList.remove('spin', 'armed');
+    indicator.style.height = '0px';
+    pulled = 0;
+  });
+}
+
+// ── Drag-to-close modal (handle bar) ─────────────────────────────────────────
+function setupDragHandles() {
+  document.querySelectorAll('.modal-handle').forEach(handle => {
+    let startY = 0, currentY = 0, dragging = false;
+    const box = handle.parentElement;
+    const overlay = box.parentElement;
+
+    const onStart = e => {
+      dragging = true;
+      startY = (e.touches ? e.touches[0].clientY : e.clientY);
+      currentY = startY;
+      box.style.transition = 'none';
+    };
+    const onMove = e => {
+      if (!dragging) return;
+      currentY = (e.touches ? e.touches[0].clientY : e.clientY);
+      const dy = Math.max(0, currentY - startY);
+      box.style.transform = `translateY(${dy}px)`;
+      e.preventDefault();
+    };
+    const onEnd = () => {
+      if (!dragging) return;
+      dragging = false;
+      const dy = currentY - startY;
+      box.style.transition = 'transform .22s ease-out';
+      if (dy > box.offsetHeight * 0.28) {
+        // Chiudi
+        box.style.transform = `translateY(${box.offsetHeight}px)`;
+        setTimeout(() => {
+          box.style.transform = '';
+          overlay.hidden = true;
+          if (overlay === D.modalOverlay) closeModal();
+          else if (overlay === D.catModalOverlay) D.catModalOverlay.hidden = true;
+        }, 220);
+      } else {
+        box.style.transform = '';
+      }
+    };
+    handle.addEventListener('touchstart', onStart, { passive: true });
+    handle.addEventListener('touchmove',  onMove,  { passive: false });
+    handle.addEventListener('touchend',   onEnd);
+    handle.addEventListener('mousedown',  onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onEnd);
+  });
+}
+
 // ── Ordinamento + memoization haystack ───────────────────────────────────────
 // Aggiunge un campo `_search` precalcolato per evitare di ricomputarlo ad ogni filtro
 function prepareContacts(arr) {
@@ -172,6 +443,10 @@ async function init() {
   applyTheme(localStorage.getItem(LS_THEME) || 'dark');
   registerSW();
   setupEvents();
+  setupPullToRefresh();
+  setupDragHandles();
+  // Drain coda offline al boot (se la rete è ok)
+  if (navigator.onLine) drainQueue().catch(() => {});
   await loadData();
 }
 
@@ -223,17 +498,38 @@ async function loadData() {
   }
 }
 
-// ── Render Chips (categorie) ─────────────────────────────────────────────────
+// ── Render Chips (categorie + speciali) ─────────────────────────────────────
 function renderChips() {
   const sorted = [...categories].sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
-  D.chips.innerHTML = sorted.map(c =>
+  const favCount = favs.size;
+  const recentCount = getRecentCalls().length;
+
+  let html = '';
+  if (favCount) {
+    html += `<button class="chip chip-special${activeSpecial === 'fav' ? ' active' : ''}" data-special="fav" type="button">★ Preferiti</button>`;
+  }
+  if (recentCount) {
+    html += `<button class="chip chip-special${activeSpecial === 'recent' ? ' active' : ''}" data-special="recent" type="button">🕐 Recenti</button>`;
+  }
+  html += sorted.map(c =>
     `<button class="chip${activeCategory === c.nome ? ' active' : ''}" data-cat="${esc(c.nome)}" type="button">${esc(c.nome)}</button>`
   ).join('');
+
+  D.chips.innerHTML = html;
 }
 
 // ── Filtri ───────────────────────────────────────────────────────────────────
 function applyFilters() {
   let result = allContacts;
+  if (activeSpecial === 'fav') {
+    result = result.filter(c => favs.has(String(c.id)));
+  } else if (activeSpecial === 'recent') {
+    const recents = getRecentCalls();
+    const order = new Map(recents.map((id, i) => [String(id), i]));
+    result = result
+      .filter(c => order.has(String(c.id)))
+      .sort((a, b) => order.get(String(a.id)) - order.get(String(b.id)));
+  }
   if (activeCategory) result = result.filter(c => c.categoria === activeCategory);
   if (activeAlpha) {
     if (activeAlpha === '0-9') {
@@ -300,10 +596,11 @@ function renderContacts(contacts) {
       return `<span class="num-group"><a class="num-pill" href="tel:${n}" data-num="${esc(n)}" data-nome="${esc(c.nome)}">${nH}</a>${nota ? `<span class="num-nota-inline">${notaH}</span>` : ''}</span>`;
     }).join('');
 
+    const star = isFav(c.id) ? `<span class="contact-fav-star" aria-label="Preferito">${STAR_SVG}</span>` : '';
     return `<div class="contact-card" data-id="${c.id}">
       <div class="contact-avatar" style="${avatarStyle(c.categoria)}" aria-hidden="true">${avatarLetter(c.nome)}</div>
       <div class="contact-info" data-id="${c.id}">
-        <div class="contact-name">${nomeH}</div>
+        <div class="contact-name">${star}<span class="contact-name-text">${nomeH}</span></div>
         <div class="contact-numbers">${groups}</div>
         <div class="contact-cat">${esc(String(c.categoria))}</div>
       </div>
@@ -333,11 +630,8 @@ function updateCount(n) {
 
 // ── Events setup ─────────────────────────────────────────────────────────────
 function setupEvents() {
-  // Tema
-  D.btnTheme.addEventListener('click', () => {
-    const cur = document.documentElement.getAttribute('data-theme');
-    applyTheme(cur === 'dark' ? 'light' : 'dark');
-  });
+  // Tema (3 stati: dark → light → auto)
+  D.btnTheme.addEventListener('click', cycleTheme);
 
   // Search debounced
   const debouncedFilter = debounce(() => {
@@ -365,9 +659,10 @@ function setupEvents() {
     activeCategory = null;
     activeSearch   = '';
     activeAlpha    = null;
+    activeSpecial  = null;
     D.searchBar.value = '';
     D.searchWrap.classList.remove('has-text');
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    renderChips();
     D.btnAll.classList.add('active');
     D.btnAlpha.classList.remove('active');
     renderContacts(allContacts);
@@ -375,9 +670,9 @@ function setupEvents() {
 
   // Alpha
   D.btnAlpha.addEventListener('click', openAlphaModal);
-  D.btnAlphaClose.addEventListener('click', () => { D.alphaModalOverlay.hidden = true; });
+  D.btnAlphaClose.addEventListener('click', () => { releaseFocus(D.alphaModalOverlay); D.alphaModalOverlay.hidden = true; });
   D.alphaModalOverlay.addEventListener('click', e => {
-    if (e.target === D.alphaModalOverlay) D.alphaModalOverlay.hidden = true;
+    if (e.target === D.alphaModalOverlay) { releaseFocus(D.alphaModalOverlay); D.alphaModalOverlay.hidden = true; }
   });
 
   // Nuovo
@@ -429,26 +724,43 @@ function setupEvents() {
       }
       return;
     }
-    // Tap diretto sul numero → haptic + lascia link nativo tel:
-    if (e.target.closest('.num-pill') && !longPressTriggered) {
+    // Tap diretto sul numero → haptic + traccia recente + lascia link nativo tel:
+    const numLink = e.target.closest('.num-pill');
+    if (numLink && !longPressTriggered) {
       haptic(12);
+      const card = numLink.closest('.contact-card');
+      if (card) pushRecentCall(card.dataset.id);
     }
   });
 
   // ── Long-press su numero → menu copia/condividi ──────────────────────────
   setupLongPress();
 
-  // ── Event delegation: chips categorie ─────────────────────────────────────
+  // ── Event delegation: chips categorie + speciali ─────────────────────────
   D.chips.addEventListener('click', e => {
     const chip = e.target.closest('.chip');
     if (!chip) return;
     haptic(8);
+    if (chip.dataset.special) {
+      const sp = chip.dataset.special;
+      activeSpecial = activeSpecial === sp ? null : sp;
+      activeCategory = null;
+      renderChips();
+      D.btnAll.classList.toggle('active', !activeSpecial);
+      applyFilters();
+      return;
+    }
     const cat = chip.dataset.cat;
     activeCategory = activeCategory === cat ? null : cat;
-    document.querySelectorAll('.chip').forEach(b => b.classList.toggle('active', b.dataset.cat === activeCategory));
+    activeSpecial = null;
+    renderChips();
     D.btnAll.classList.toggle('active', !activeCategory);
     applyFilters();
   });
+
+  // ── Esportazione ──────────────────────────────────────────────────────────
+  $('btnExportCSV')?.addEventListener('click', exportCSV);
+  $('btnExportVCF')?.addEventListener('click', exportVCF);
 
   // ── Suggerimenti ricerca recenti ──────────────────────────────────────────
   D.searchBar.addEventListener('focus', renderRecentSuggestions);
@@ -491,23 +803,38 @@ function setupEvents() {
   document.addEventListener('focusin', () => {});
 }
 
-// ── Long press detection ──────────────────────────────────────────────────────
+// ── Long press detection (numero | card) ─────────────────────────────────────
 let longPressTimer = null;
 let longPressTriggered = false;
 let longPressNum  = '';
 let longPressNome = '';
+let longPressMode = '';   // 'num' | 'card'
+let longPressId   = '';
 function setupLongPress() {
   D.contactList.addEventListener('pointerdown', e => {
-    const a = e.target.closest('.num-pill');
-    if (!a) return;
+    const a    = e.target.closest('.num-pill');
+    const card = e.target.closest('.contact-info');
+    if (!a && !card) return;
     longPressTriggered = false;
-    longPressNum  = a.dataset.num || a.textContent.trim();
-    longPressNome = a.dataset.nome || '';
+    if (a) {
+      longPressMode = 'num';
+      longPressNum  = a.dataset.num  || a.textContent.trim();
+      longPressNome = a.dataset.nome || '';
+    } else {
+      longPressMode = 'card';
+      longPressId   = card.dataset.id;
+    }
     clearTimeout(longPressTimer);
     longPressTimer = setTimeout(() => {
       longPressTriggered = true;
       haptic([15, 30, 15]);
-      openNumMenu(longPressNum, longPressNome);
+      if (longPressMode === 'num') openNumMenu(longPressNum, longPressNome);
+      else if (longPressMode === 'card') {
+        toggleFav(longPressId);
+        showToast(isFav(longPressId) ? '★ Aggiunto ai preferiti' : 'Rimosso dai preferiti', 1800, 'success');
+        renderChips();
+        applyFilters();
+      }
     }, 500);
   });
   const cancel = () => { clearTimeout(longPressTimer); };
@@ -517,12 +844,11 @@ function setupLongPress() {
   D.contactList.addEventListener('pointermove', e => {
     if (Math.abs(e.movementX) + Math.abs(e.movementY) > 5) cancel();
   });
-  // Quando si attiva il long-press, blocca il click successivo che farebbe la chiamata
+  // Quando si attiva il long-press, blocca il click successivo
   D.contactList.addEventListener('click', e => {
     if (longPressTriggered) {
       e.preventDefault();
       e.stopPropagation();
-      // reset al prossimo evento
       setTimeout(() => { longPressTriggered = false; }, 50);
     }
   }, true);
@@ -532,8 +858,10 @@ function openNumMenu(num, nome) {
   D.numMenuTitle.textContent = num;
   D.numMenuSub.textContent   = nome || '';
   D.numMenuOverlay.hidden = false;
+  trapFocus(D.numMenuOverlay);
 }
 function closeNumMenu() {
+  releaseFocus(D.numMenuOverlay);
   D.numMenuOverlay.hidden = true;
 }
 async function handleNumMenuAction(action) {
@@ -658,6 +986,7 @@ function openModal(contact) {
   }
 
   D.modalOverlay.hidden = false;
+  trapFocus(D.modalOverlay);
   setTimeout(() => D.fNome.focus(), 50);
 }
 function openEdit(id) {
@@ -665,6 +994,7 @@ function openEdit(id) {
   if (c) openModal(c);
 }
 function closeModal() {
+  releaseFocus(D.modalOverlay);
   D.modalOverlay.hidden = true;
   // Ripristina scroll position
   if (savedScrollY) {
@@ -773,6 +1103,7 @@ function openAlphaModal() {
     });
   });
   D.alphaModalOverlay.hidden = false;
+  trapFocus(D.alphaModalOverlay);
 }
 
 // ── Modal Categorie ──────────────────────────────────────────────────────────
@@ -782,6 +1113,7 @@ let catPendingNew = [];
 
 async function openCatModal() {
   D.catModalOverlay.hidden = false;
+  trapFocus(D.catModalOverlay);
   D.catList.innerHTML = '<div style="text-align:center;padding:1.5rem 1rem"><div class="spinner"></div></div>';
   try {
     const [cats, conts] = await Promise.all([
@@ -803,6 +1135,7 @@ async function openCatModal() {
 
 async function closeCatModal() {
   if (hasCatChanges() && !(await showConfirm('Ci sono modifiche non salvate.\nChiudere ugualmente?', 'warning'))) return;
+  releaseFocus(D.catModalOverlay);
   D.catModalOverlay.hidden = true;
 }
 
@@ -919,21 +1252,34 @@ async function saveCatChanges() {
   const btn = D.btnCatSave;
   btn.innerHTML = '<span class="btn-spinner"></span>'; btn.disabled = true;
   try {
-    const maxOrdSupa = categories.reduce((m, c) => Math.max(m, c.ordine || 0), 0);
-    for (const [i, nc] of catPendingNew.entries()) {
-      await supaFetch('categorie', {
+    // ── RPC atomica (transazione PostgreSQL) ────────────────────────────────
+    const adds    = catPendingNew.map(nc => formatCatName(nc.nome));
+    const renamesPayload = renames.map(c => ({ old: c.nome, new: formatCatName(c.editNome) }));
+    const deletes = catPending.filter(c => c.deleted).map(c => c.nome);
+
+    try {
+      await supaFetch('rpc/update_categorie_batch', {
         method: 'POST',
-        body: JSON.stringify({ nome: formatCatName(nc.nome), ordine: maxOrdSupa + i + 1 }),
+        body: JSON.stringify({ adds, renames: renamesPayload, deletes }),
       });
-    }
-    for (const c of renames) {
-      await supaFetch('rpc/rename_categoria', {
-        method: 'POST',
-        body: JSON.stringify({ old_nome: c.nome, new_nome: formatCatName(c.editNome) }),
-      });
-    }
-    for (const c of catPending.filter(c => c.deleted)) {
-      await supaFetch('categorie?nome=eq.' + encodeURIComponent(c.nome), { method: 'DELETE' });
+    } catch (rpcErr) {
+      // Fallback: la RPC potrebbe non esistere ancora — flusso a chiamate sequenziali
+      const maxOrdSupa = categories.reduce((m, c) => Math.max(m, c.ordine || 0), 0);
+      for (const [i, nc] of catPendingNew.entries()) {
+        await supaFetch('categorie', {
+          method: 'POST',
+          body: JSON.stringify({ nome: formatCatName(nc.nome), ordine: maxOrdSupa + i + 1 }),
+        });
+      }
+      for (const c of renames) {
+        await supaFetch('rpc/rename_categoria', {
+          method: 'POST',
+          body: JSON.stringify({ old_nome: c.nome, new_nome: formatCatName(c.editNome) }),
+        });
+      }
+      for (const c of catPending.filter(c => c.deleted)) {
+        await supaFetch('categorie?nome=eq.' + encodeURIComponent(c.nome), { method: 'DELETE' });
+      }
     }
 
     let updatedCats     = [...categories];

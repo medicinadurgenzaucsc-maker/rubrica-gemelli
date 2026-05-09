@@ -20,6 +20,7 @@ const MAX_CALLS  = 8;
 const STAR_SVG   = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 const ALPHA_KEYS = ['0-9', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
 const TRASH_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+const DRAG_SVG  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>`;
 const EDIT_SVG  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 
 // ── DOM cache (evita decine di getElementById) ───────────────────────────────
@@ -777,6 +778,19 @@ function setupEvents() {
     if (c) exportSingleVCF(c);
   });
 
+  // ── Shortcut tastiera: "/" porta focus sulla ricerca (desktop) ────────────
+  document.addEventListener('keydown', e => {
+    if (e.key !== '/') return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const tag = (document.activeElement?.tagName || '').toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    // Modal aperto → non interferire
+    if (activeModal) return;
+    e.preventDefault();
+    D.searchBar.focus();
+    D.searchBar.select?.();
+  });
+
   // ── Suggerimenti ricerca recenti ──────────────────────────────────────────
   D.searchBar.addEventListener('focus', renderRecentSuggestions);
   D.searchBar.addEventListener('blur',  () => {
@@ -1157,28 +1171,97 @@ async function closeCatModal() {
 }
 
 function hasCatChanges() {
-  return catPending.some(c => c.deleted || c.editNome !== c.nome) || catPendingNew.length > 0;
+  // Cambio nome o eliminazione
+  if (catPending.some(c => c.deleted || c.editNome !== c.nome)) return true;
+  // Aggiunte
+  if (catPendingNew.length > 0) return true;
+  // Cambio ordine
+  for (const c of catPending) {
+    const orig = catOriginal.find(o => o.id === c.id);
+    if (orig && orig.ordine !== c.ordine) return true;
+  }
+  return false;
+}
+
+// ── Drag & drop riordino categorie ──────────────────────────────────────────
+function setupCatDrag() {
+  let dragRow = null;
+  let dragPidx = null;
+  let pointerId = null;
+
+  D.catList.querySelectorAll('.cat-drag-handle[data-drag]').forEach(handle => {
+    handle.addEventListener('pointerdown', e => {
+      const row = handle.closest('.cat-item');
+      if (!row) return;
+      dragRow  = row;
+      dragPidx = Number(row.dataset.pidx);
+      pointerId = e.pointerId;
+      row.classList.add('dragging');
+      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+      haptic(15);
+    });
+
+    handle.addEventListener('pointermove', e => {
+      if (!dragRow || e.pointerId !== pointerId) return;
+      e.preventDefault();
+      // Trova la row sotto il puntatore
+      const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.cat-item');
+      if (!target || target === dragRow || !target.dataset.pidx) return;
+      const targetPidx = Number(target.dataset.pidx);
+      // Scambia ordine in catPending
+      const a = catPending[dragPidx];
+      const b = catPending[targetPidx];
+      if (!a || !b) return;
+      const tmp = a.ordine;
+      a.ordine = b.ordine;
+      b.ordine = tmp;
+      // Re-render (mantenendo la classe dragging sulla nuova posizione)
+      renderCatList();
+      // Ritrova la row e marcala dragging
+      const newRow = D.catList.querySelector(`.cat-item[data-pidx="${dragPidx}"]`);
+      if (newRow) {
+        newRow.classList.add('dragging');
+        dragRow = newRow;
+      }
+    });
+
+    const finish = e => {
+      if (!dragRow) return;
+      dragRow.classList.remove('dragging');
+      dragRow = null;
+      dragPidx = null;
+      pointerId = null;
+    };
+    handle.addEventListener('pointerup',     finish);
+    handle.addEventListener('pointercancel', finish);
+    handle.addEventListener('pointerleave',  finish);
+  });
 }
 
 function renderCatList() {
-  const existingHTML = catPending
+  // Ordina catPending in base a `ordine` per il render visuale
+  const visiblePending = catPending
     .filter(c => !c.deleted)
-    .map(c => {
-      const pidx = catPending.indexOf(c);
-      const canDel = c.count === 0;
-      return `
-        <div class="cat-item">
-          <input class="cat-name-input" type="text" value="${esc(c.editNome)}"
-                 data-pidx="${pidx}" autocomplete="off" spellcheck="false">
-          <span class="cat-count">${c.count > 0 ? c.count + ' cont.' : '—'}</span>
-          <button class="cat-del-btn ${canDel ? 'can-del' : 'no-del'}"
-                  data-pidx="${pidx}" data-type="existing" type="button"
-                  title="${canDel ? 'Elimina' : 'Ha contatti — elimina prima i contatti'}">${TRASH_SVG}</button>
-        </div>`;
-    }).join('');
+    .sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
+
+  const existingHTML = visiblePending.map(c => {
+    const pidx = catPending.indexOf(c);
+    const canDel = c.count === 0;
+    return `
+      <div class="cat-item" data-pidx="${pidx}">
+        <span class="cat-drag-handle" data-drag="1" aria-label="Trascina per riordinare">${DRAG_SVG}</span>
+        <input class="cat-name-input" type="text" value="${esc(c.editNome)}"
+               data-pidx="${pidx}" autocomplete="off" spellcheck="false">
+        <span class="cat-count">${c.count > 0 ? c.count + ' cont.' : '—'}</span>
+        <button class="cat-del-btn ${canDel ? 'can-del' : 'no-del'}"
+                data-pidx="${pidx}" data-type="existing" type="button"
+                title="${canDel ? 'Elimina' : 'Ha contatti — elimina prima i contatti'}">${TRASH_SVG}</button>
+      </div>`;
+  }).join('');
 
   const newHTML = catPendingNew.map((nc, ni) => `
     <div class="cat-item">
+      <span class="cat-drag-handle" style="opacity:.25" aria-hidden="true">${DRAG_SVG}</span>
       <input class="cat-name-input" type="text" value="${esc(nc.nome)}"
              data-nidx="${ni}" autocomplete="off" spellcheck="false">
       <span class="cat-count" style="color:var(--accent);font-style:italic">nuovo</span>
@@ -1187,6 +1270,7 @@ function renderCatList() {
     </div>`).join('');
 
   D.catList.innerHTML = existingHTML + newHTML;
+  setupCatDrag();
 
   D.catList.querySelectorAll('.cat-name-input[data-pidx]').forEach(input => {
     const idx = Number(input.dataset.pidx);
@@ -1299,6 +1383,18 @@ async function saveCatChanges() {
       }
     }
 
+    // ── Riordino: PATCH delle categorie con `ordine` cambiato ─────────────────
+    const reorders = catPending.filter(c => {
+      const orig = catOriginal.find(o => o.id === c.id);
+      return orig && !c.deleted && orig.ordine !== c.ordine;
+    });
+    for (const c of reorders) {
+      await supaFetch(`categorie?id=eq.${c.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ordine: c.ordine }),
+      });
+    }
+
     let updatedCats     = [...categories];
     let updatedContacts = [...allContacts];
 
@@ -1306,6 +1402,10 @@ async function saveCatChanges() {
       const newNome = formatCatName(c.editNome);
       updatedCats     = updatedCats.map(cat  => cat.nome === c.nome  ? { ...cat,  nome: newNome } : cat);
       updatedContacts = updatedContacts.map(cont => cont.categoria === c.nome ? { ...cont, categoria: newNome } : cont);
+    }
+    // Ordini cambiati
+    for (const c of catPending) {
+      updatedCats = updatedCats.map(cat => cat.id === c.id ? { ...cat, ordine: c.ordine } : cat);
     }
     const maxOrd = updatedCats.reduce((m, c) => Math.max(m, c.ordine || 0), 0);
     catPendingNew.forEach((nc, i) => {

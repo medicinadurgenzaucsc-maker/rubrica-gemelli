@@ -509,8 +509,30 @@ main { padding: .75rem 0; }
   gap: .5rem;
   padding: .35rem 0;
   border-bottom: 1px solid var(--border);
+  background: var(--modal-bg);
+  transition: transform .12s, opacity .12s;
 }
 .cat-item:last-child { border-bottom: none; }
+.cat-item.dragging {
+  opacity: .6;
+  transform: scale(1.02);
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  z-index: 10;
+  position: relative;
+}
+.cat-drag-handle {
+  width: 2rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  cursor: grab;
+  flex-shrink: 0;
+  touch-action: none;
+  user-select: none;
+}
+.cat-drag-handle:active { cursor: grabbing; color: var(--accent); }
 .cat-name-input {
   flex: 1;
   padding: .55rem .65rem;

@@ -330,13 +330,6 @@ function buildVCard(c) {
   return lines.join('\r\n');
 }
 
-function exportVCF() {
-  const all = allContacts.map(buildVCard).join('\r\n');
-  const today = new Date().toISOString().slice(0, 10);
-  downloadFile(`rubrica-gemelli-${today}.vcf`, all, 'text/vcard;charset=utf-8');
-  showToast('vCard esportata', 2000, 'success');
-}
-
 function exportSingleVCF(contact) {
   if (!contact) return;
   const slug = String(contact.nome).toLowerCase()
@@ -777,7 +770,6 @@ function setupEvents() {
 
   // ── Esportazione ──────────────────────────────────────────────────────────
   $('btnExportCSV')?.addEventListener('click', exportCSV);
-  $('btnExportVCF')?.addEventListener('click', exportVCF);
 
   // Salva singolo contatto come vCard (solo modal modifica)
   D.btnSaveVcf.addEventListener('click', () => {

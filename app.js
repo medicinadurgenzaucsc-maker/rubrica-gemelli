@@ -778,9 +778,9 @@ function setupEvents() {
     if (c) exportSingleVCF(c);
   });
 
-  // ── Shortcut tastiera: "/" porta focus sulla ricerca (desktop) ────────────
+  // ── Shortcut tastiera: "\" porta focus sulla ricerca (desktop) ────────────
   document.addEventListener('keydown', e => {
-    if (e.key !== '/') return;
+    if (e.key !== '\\') return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const tag = (document.activeElement?.tagName || '').toUpperCase();
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;

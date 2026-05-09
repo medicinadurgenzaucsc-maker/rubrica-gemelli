@@ -33,7 +33,7 @@ function cacheDOM() {
     'chips','installToast',
     'modalOverlay','modalTitle','modalBox','contactForm',
     'fId','fNome','fCategoria','numeriContainer','btnAddNum',
-    'btnCancel','btnDelete','btnSave',
+    'btnCancel','btnDelete','btnSave','btnSaveVcf',
     'catModalOverlay','catModalBox','catList','fNewCat','btnAddCat',
     'btnCatCancel','btnCatSave',
     'alphaModalOverlay','alphaGrid','btnAlphaClose',
@@ -310,24 +310,39 @@ function exportCSV() {
   downloadFile(`rubrica-gemelli-${today}.csv`, rows.join('\n'), 'text/csv;charset=utf-8');
   showToast('CSV esportato', 2000, 'success');
 }
+function buildVCard(c) {
+  const nums  = String(c.numeri || '').split('|').map(s => s.trim()).filter(Boolean);
+  const notes = String(c.note   || '').split('|');
+  const lines = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    `FN:${c.nome}`,
+    `N:${c.nome};;;;`,
+    `ORG:${c.categoria}`,
+  ];
+  nums.forEach((n, i) => {
+    const nota = (notes[i] || '').trim();
+    // Mette la nota nel TYPE in modo che appaia come etichetta nel telefono
+    const type = nota ? `WORK,${nota.replace(/[,;:]/g, ' ')}` : 'WORK';
+    lines.push(`TEL;TYPE=${type}:${n}`);
+  });
+  lines.push('END:VCARD');
+  return lines.join('\r\n');
+}
+
 function exportVCF() {
-  const lines = [];
-  for (const c of allContacts) {
-    const nums  = String(c.numeri || '').split('|').map(s => s.trim()).filter(Boolean);
-    const notes = String(c.note   || '').split('|');
-    lines.push('BEGIN:VCARD');
-    lines.push('VERSION:3.0');
-    lines.push(`FN:${c.nome}`);
-    lines.push(`ORG:${c.categoria}`);
-    nums.forEach((n, i) => {
-      const nota = (notes[i] || '').trim();
-      lines.push(`TEL;TYPE=WORK${nota ? ';X-LABEL=' + nota : ''}:${n}`);
-    });
-    lines.push('END:VCARD');
-  }
+  const all = allContacts.map(buildVCard).join('\r\n');
   const today = new Date().toISOString().slice(0, 10);
-  downloadFile(`rubrica-gemelli-${today}.vcf`, lines.join('\r\n'), 'text/vcard;charset=utf-8');
+  downloadFile(`rubrica-gemelli-${today}.vcf`, all, 'text/vcard;charset=utf-8');
   showToast('vCard esportata', 2000, 'success');
+}
+
+function exportSingleVCF(contact) {
+  if (!contact) return;
+  const slug = String(contact.nome).toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'contatto';
+  downloadFile(`${slug}.vcf`, buildVCard(contact), 'text/vcard;charset=utf-8');
+  haptic(12);
 }
 
 // ── Pull-to-refresh ──────────────────────────────────────────────────────────
@@ -375,47 +390,47 @@ function setupPullToRefresh() {
 // ── Drag-to-close modal (handle bar) ─────────────────────────────────────────
 function setupDragHandles() {
   document.querySelectorAll('.modal-handle').forEach(handle => {
-    let startY = 0, currentY = 0, dragging = false;
+    let startY = 0, currentY = 0, dragging = false, pointerId = null;
     const box = handle.parentElement;
     const overlay = box.parentElement;
 
-    const onStart = e => {
-      dragging = true;
-      startY = (e.touches ? e.touches[0].clientY : e.clientY);
-      currentY = startY;
+    handle.addEventListener('pointerdown', e => {
+      dragging  = true;
+      pointerId = e.pointerId;
+      startY    = e.clientY;
+      currentY  = e.clientY;
       box.style.transition = 'none';
-    };
-    const onMove = e => {
-      if (!dragging) return;
-      currentY = (e.touches ? e.touches[0].clientY : e.clientY);
+      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    handle.addEventListener('pointermove', e => {
+      if (!dragging || e.pointerId !== pointerId) return;
+      currentY = e.clientY;
       const dy = Math.max(0, currentY - startY);
       box.style.transform = `translateY(${dy}px)`;
       e.preventDefault();
-    };
-    const onEnd = () => {
+    });
+    const finish = e => {
       if (!dragging) return;
       dragging = false;
+      try { handle.releasePointerCapture(pointerId); } catch (_) {}
+      pointerId = null;
       const dy = currentY - startY;
       box.style.transition = 'transform .22s ease-out';
       if (dy > box.offsetHeight * 0.28) {
-        // Chiudi
         box.style.transform = `translateY(${box.offsetHeight}px)`;
         setTimeout(() => {
           box.style.transform = '';
-          overlay.hidden = true;
-          if (overlay === D.modalOverlay) closeModal();
-          else if (overlay === D.catModalOverlay) D.catModalOverlay.hidden = true;
+          if (overlay === D.modalOverlay)         closeModal();
+          else if (overlay === D.catModalOverlay) closeCatModal();
+          else                                     overlay.hidden = true;
         }, 220);
       } else {
         box.style.transform = '';
       }
     };
-    handle.addEventListener('touchstart', onStart, { passive: true });
-    handle.addEventListener('touchmove',  onMove,  { passive: false });
-    handle.addEventListener('touchend',   onEnd);
-    handle.addEventListener('mousedown',  onStart);
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup',   onEnd);
+    handle.addEventListener('pointerup',     finish);
+    handle.addEventListener('pointercancel', finish);
+    handle.addEventListener('pointerleave',  finish);
   });
 }
 
@@ -706,6 +721,7 @@ function setupEvents() {
 
   // ── Event delegation: lista contatti ──────────────────────────────────────
   D.contactList.addEventListener('click', e => {
+    // 1) Pulsante edit (matita)
     const editBtn = e.target.closest('.btn-edit');
     if (editBtn) {
       e.stopPropagation();
@@ -713,23 +729,24 @@ function setupEvents() {
       openEdit(editBtn.dataset.id);
       return;
     }
-    // Tap su area info (nome) → apre modal modifica
-    const info = e.target.closest('.contact-info');
-    if (info) {
-      // Solo se NON è un tap su <a> (numero) o long-press in corso
-      const isNum = e.target.closest('.num-pill');
-      if (!isNum && !longPressTriggered) {
-        haptic(8);
-        openEdit(info.dataset.id);
-      }
-      return;
-    }
-    // Tap diretto sul numero → haptic + traccia recente + lascia link nativo tel:
+    // 2) Numero — PRIMA di .contact-info perché ne è figlio
     const numLink = e.target.closest('.num-pill');
     if (numLink && !longPressTriggered) {
       haptic(12);
       const card = numLink.closest('.contact-card');
-      if (card) pushRecentCall(card.dataset.id);
+      if (card) {
+        const wasEmpty = getRecentCalls().length === 0;
+        pushRecentCall(card.dataset.id);
+        // Se è la prima chiamata, ridisegna le chips per mostrare "🕐 Recenti"
+        if (wasEmpty) renderChips();
+      }
+      return; // lascia procedere il link tel: nativo
+    }
+    // 3) Area info (nome) → apre modal modifica
+    const info = e.target.closest('.contact-info');
+    if (info && !longPressTriggered) {
+      haptic(8);
+      openEdit(info.dataset.id);
     }
   });
 
@@ -761,6 +778,12 @@ function setupEvents() {
   // ── Esportazione ──────────────────────────────────────────────────────────
   $('btnExportCSV')?.addEventListener('click', exportCSV);
   $('btnExportVCF')?.addEventListener('click', exportVCF);
+
+  // Salva singolo contatto come vCard (solo modal modifica)
+  D.btnSaveVcf.addEventListener('click', () => {
+    const c = D.btnSaveVcf._contact;
+    if (c) exportSingleVCF(c);
+  });
 
   // ── Suggerimenti ricerca recenti ──────────────────────────────────────────
   D.searchBar.addEventListener('focus', renderRecentSuggestions);
@@ -972,6 +995,8 @@ function openModal(contact) {
   D.fId.value   = contact?.id ?? '';
   D.fNome.value = contact?.nome ?? '';
   D.btnDelete.hidden = isNew;
+  D.btnSaveVcf.hidden = isNew;
+  D.btnSaveVcf._contact = contact || null;
   D.fCategoria.innerHTML = categories.map(c =>
     `<option value="${esc(c.nome)}"${c.nome === contact?.categoria ? ' selected' : ''}>${esc(c.nome)}</option>`
   ).join('');

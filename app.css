@@ -770,6 +770,29 @@ main { padding: .75rem 0; }
   color: #fff;
 }
 
+/* Pulsante "Salva nei contatti" nel modal contatto */
+.btn-save-vcf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  width: 100%;
+  padding: .65rem;
+  background: var(--num-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font-size: .85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  min-height: 42px;
+  transition: opacity .12s;
+}
+.btn-save-vcf:active { opacity: .75; }
+.btn-save-vcf[hidden] { display: none; }
+
 /* Sezione esportazione nel modal categorie */
 .cat-export-section {
   margin-top: 1.2rem;

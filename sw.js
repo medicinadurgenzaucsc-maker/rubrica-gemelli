@@ -1,9 +1,12 @@
-// Service Worker — Rubrica Gemelli v4
-const CACHE = 'rubrica-v4';
+// Service Worker — Rubrica Gemelli v5
+const CACHE = 'rubrica-v5';
 const SUPA_HOST = 'nbbekxuvuarxkuvvvgbi.supabase.co';
 const STATIC = [
   './manifest.json',
   './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-1024.png',
   './app.css',
   './app.js',
 ];

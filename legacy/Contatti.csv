@@ -1,0 +1,646 @@
+id,nome,categoria,numeri,note
+1,Cardiochirurgo,GUARDIE E URGENZE,3119,
+2,Cardiologo,GUARDIE E URGENZE,3111,
+3,Cardiologia UTIC,GUARDIE E URGENZE,3126|4444,|
+4,Cardiologo PS,GUARDIE E URGENZE,3478,
+5,Chirurgo generale,GUARDIE E URGENZE,3181|3182,|
+6,Chirurgo maxillo-facciale,GUARDIE E URGENZE,3189,
+7,Chirurgo toracico,GUARDIE E URGENZE,3246,reperibile consulenze
+8,Chirurgo vascolare,GUARDIE E URGENZE,3138,
+9,Chirurgo vascolare,GUARDIE E URGENZE,3139,specializzando
+10,Chirurgo vertebrale,GUARDIE E URGENZE,3202,
+11,Columbus,GUARDIE E URGENZE,9913,
+12,Ematologo,GUARDIE E URGENZE,3129|3114,|sangue
+13,Ematologia emocromo urgente,GUARDIE E URGENZE,8284|3129,|
+14,Ematologia urgenze,GUARDIE E URGENZE,5010|4658|3114,||sangue
+15,Endoscopista,GUARDIE E URGENZE,3489,
+16,Farmacia reperibile De Luca,GUARDIE E URGENZE,3891844623,
+17,Ginecologo,GUARDIE E URGENZE,3147|3109,|sala parto
+18,Infettivologo,GUARDIE E URGENZE,3113,
+19,Interna turno A,GUARDIE E URGENZE,3100,
+20,Interna turno B,GUARDIE E URGENZE,3101,
+21,Interna turno C,GUARDIE E URGENZE,3387,
+22,Laboratorio urgenze,GUARDIE E URGENZE,3120|3163|3569|8284,|||
+23,Microbiologia,GUARDIE E URGENZE,4218|4964,|servizio ed emocolture
+24,Nefrologo,GUARDIE E URGENZE,3135,dialisi
+25,Neurochirurgo,GUARDIE E URGENZE,3110,
+26,Neurologo,GUARDIE E URGENZE,3115|3925,|specializzandi
+27,Neurologia stroke,GUARDIE E URGENZE,3174|3175,PS|specializzandi dopo le 17
+28,NPI,GUARDIE E URGENZE,3159,
+29,Oculista,GUARDIE E URGENZE,3130,
+30,Ortopedico,GUARDIE E URGENZE,3121|3141|4837,|spec rep|PS
+31,Otorino,GUARDIE E URGENZE,3116,
+32,Pediatra,GUARDIE E URGENZE,3117,
+33,Psichiatra,GUARDIE E URGENZE,3124,
+34,Radiologia angiografica/interventistica,GUARDIE E URGENZE,3204|4675|6268,||
+35,Radiologia urgenze,GUARDIE E URGENZE,3136,
+36,Radioterapia,GUARDIE E URGENZE,3155,
+37,Reumatologi DECT,GUARDIE E URGENZE,3359,
+38,Rianimatore,GUARDIE E URGENZE,4490|3112,|
+39,Rianimatore guardia,GUARDIE E URGENZE,5556,
+40,Sala operatoria urgenze,GUARDIE E URGENZE,6536,
+41,Stroke,GUARDIE E URGENZE,3174|3175,ps|specializzandi dopo le 17
+42,Torace a letto,GUARDIE E URGENZE,3136,DECT tecnico
+43,Urologia,GUARDIE E URGENZE,3123,
+44,Acampora Nicola,DECT STRUTTURATI,3276,
+45,Addolorato,DECT STRUTTURATI,5650|9212,|
+46,Anile,DECT STRUTTURATI,5538,
+47,Annetta,DECT STRUTTURATI,3509,
+48,Betta,DECT STRUTTURATI,4217|6265,|
+49,Barillaro,DECT STRUTTURATI,3704|3190,|
+50,Bianco,DECT STRUTTURATI,7929,consulente neurologa
+51,Bonomo,DECT STRUTTURATI,3204,
+52,Candelli,DECT STRUTTURATI,3161,
+53,Capalbo,DECT STRUTTURATI,3281,direttore sanitario
+54,Caputo,DECT STRUTTURATI,3130,
+55,Cerolini,DECT STRUTTURATI,5480,
+56,Colosimo,DECT STRUTTURATI,3230,
+57,D'Ercole,DECT STRUTTURATI,5030,
+58,De Cristofaro,DECT STRUTTURATI,3137,
+59,Di Gennaro,DECT STRUTTURATI,3498687619|6329,|
+60,De Cosmo,DECT STRUTTURATI,3166,
+61,De Candia,DECT STRUTTURATI,6329,
+62,De Gaetano,DECT STRUTTURATI,3356784944,
+63,Di Gianbenedetto,DECT STRUTTURATI,5384,
+64,Di Donato,DECT STRUTTURATI,9951,
+65,Doglietto studio,DECT STRUTTURATI,0635340460|0635340530,|
+66,Draisci,DECT STRUTTURATI,3721,anestesista
+67,Evoli,DECT STRUTTURATI,6366,
+68,Fantoni,DECT STRUTTURATI,8532|8533,|
+69,Fasciani,DECT STRUTTURATI,5429|6080,|stanza cornea
+70,Favuzzi,DECT STRUTTURATI,6277,ecocardio
+71,Fenici,DECT STRUTTURATI,4803,
+72,Ferri,DECT STRUTTURATI,9925,
+73,Franceschi,DECT STRUTTURATI,3290914553|3227,|
+74,Gambaro,DECT STRUTTURATI,3465111412,
+75,Gambassi,DECT STRUTTURATI,3241,2P
+76,Gesi,DECT STRUTTURATI,5496|5498,|
+77,Giordano,DECT STRUTTURATI,3228|4978|4600,dect||
+78,Grieco,DECT STRUTTURATI,5451,
+79,Iezzi,DECT STRUTTURATI,4675,
+80,Infante,DECT STRUTTURATI,9570,Radiologia CIC
+81,Izzo,DECT STRUTTURATI,8063,
+82,Landolfi,DECT STRUTTURATI,3207,
+83,Lanzone,DECT STRUTTURATI,3220,
+84,Laurenti,DECT STRUTTURATI,3386743846,
+85,Luongo,DECT STRUTTURATI,3285,ispettore sanitario
+86,Masucci,DECT STRUTTURATI,4964,micro
+87,Maccauro,DECT STRUTTURATI,3290,
+88,Maiuro,DECT STRUTTURATI,4421|5375,|
+89,Mariotti,DECT STRUTTURATI,4013,
+90,Marrone,DECT STRUTTURATI,5451|3205393043,|
+91,Marchese,DECT STRUTTURATI,4841,
+92,Montalto,DECT STRUTTURATI,5948|3396072211,|
+93,Montano,DECT STRUTTURATI,5032,
+94,Mormile,DECT STRUTTURATI,9779|9678,|
+95,Mottola,DECT STRUTTURATI,3732,
+96,Sarganello,DECT STRUTTURATI,5976,oculista
+97,Padua reparto,DECT STRUTTURATI,3338,
+98,Panocchia,DECT STRUTTURATI,3135,dialisi
+99,Perilli,DECT STRUTTURATI,3212,anestesista
+100,Perini,DECT STRUTTURATI,3367,
+101,Perri,DECT STRUTTURATI,4744,CPRE
+102,Pignataro,DECT STRUTTURATI,3283,ispettore sanitario
+103,Pirronti,DECT STRUTTURATI,9837,Radiologia CIC
+104,Pola,DECT STRUTTURATI,7075|5314,|
+105,Pola ortopedico,DECT STRUTTURATI,3402636062,
+106,Rendeli,DECT STRUTTURATI,5624,
+107,Riccardi,DECT STRUTTURATI,5161|4301,|
+108,Rossi,DECT STRUTTURATI,3288,tp dolore
+109,Soave,DECT STRUTTURATI,3372,antiveleni
+110,Sollazzi,DECT STRUTTURATI,3166|3212,|
+111,Sganga palliative,DECT STRUTTURATI,3706,
+112,Tacconelli,DECT STRUTTURATI,5527,
+113,Torrice,DECT STRUTTURATI,3240,
+114,Turriziani,DECT STRUTTURATI,3190,
+115,Valentini,DECT STRUTTURATI,3216,
+116,Valenza,DECT STRUTTURATI,4634,
+117,Vetrugno,DECT STRUTTURATI,4987,risk.management@pol
+118,Vecchioli,DECT STRUTTURATI,3268,
+119,Volpe,DECT STRUTTURATI,3293,
+120,Zampino,DECT STRUTTURATI,5210,
+121,DH med interna,DH,5591|4845,|
+122,DH diabetologia,DH,4112,
+123,DH ematologia,DH,6414|6423|6425|5137|5390|4344,|||||
+124,DH endocrinochirurgia,DH,5327|6671,|
+125,DH ginecologia,DH,8556,
+126,DH neurologia,DH,5390,
+127,DH NPI,DH,6391,
+128,DH oncologia,DH,6682|6318,|
+129,DH patologia obesità,DH,4963,
+130,2R,REPARTI,9758,
+131,3P,REPARTI,4414|4832,|
+132,5D,REPARTI,3189|4526,|
+133,6M,REPARTI,4407|5455,|
+134,6P,REPARTI,7286,
+135,7P,REPARTI,4469|5458|4756,|ambulatorio|caposala
+136,9M,REPARTI,4453|5889,|
+137,11N,REPARTI,5394|5395,|
+138,ABR,RUBRICA,5547,
+139,Addetti aule,RUBRICA,3308,
+140,Addolorato,RUBRICA,5650|9212,|2 nord
+141,Aferesi,RUBRICA,4514,
+142,Alcologia,RUBRICA,7215,
+143,Allergologia,RUBRICA,4847|5896|4965|4834|8241,||||
+144,ALPI,RUBRICA,5312|5305,|
+145,Ambulatorio 7P,RUBRICA,5458|4756,|caposala
+146,Ambulatorio infettive,RUBRICA,5385|5383,|
+147,Ambulatorio pediatria,RUBRICA,7726|7326|6136,rosalba|stanza a dx|sn
+148,Anatomia patologica,RUBRICA,4433|4780|3239|3407,||vecchio|coordinatrice
+149,Anatomia patologica columbus,RUBRICA,63503751,
+150,Anestesia,RUBRICA,3104|3112|3171,|rianimazione|sala
+151,Anestesia capo,RUBRICA,3103,
+152,Anestesia Endoscopia,RUBRICA,3537,
+153,Anestesia respiratoria,RUBRICA,3166|3212,|
+154,Anestesista cardiologo,RUBRICA,3106,
+155,Anestesista Draisci,RUBRICA,3721,
+156,Anestesista Perilli,RUBRICA,3212,
+157,Anestesista per RMN,RUBRICA,3288,
+158,Anestesista Rossi,RUBRICA,3288,tp dolore
+159,Angiologia 6L,RUBRICA,4317|4407,|
+160,Angiologia servizio 3 piano,RUBRICA,4294|7048|5260,||
+161,Anile,RUBRICA,5538,
+162,Antiveleni,RUBRICA,3238|3372,|Soave
+163,Assistenza PC,RUBRICA,7852,
+164,Assistenti sanitari,RUBRICA,4281,
+165,Bed management,RUBRICA,7331|3731|3275,||
+166,Betta,RUBRICA,4217|6265,|
+167,Bernabei anna,RUBRICA,3406151065,
+168,Broncoscopia,RUBRICA,6647|7306|4236,||Fuso ufficio
+169,Barillaro,RUBRICA,3704|3190,|
+170,Candelli,RUBRICA,3161,
+171,Capalbo,RUBRICA,3281,direttore sanitario
+172,Caputo,RUBRICA,3130,
+173,Cardiochirurgia,RUBRICA,4388,
+174,Cardiochirurgo guardia,RUBRICA,3119,
+175,Cardiologia case manager,RUBRICA,3725,
+176,Cardiologia ecocardio Favuzzi,RUBRICA,6277,
+177,Cardiologia Holter,RUBRICA,8548|6890|6891,||
+178,Cardiologia guardia,RUBRICA,3111,
+179,Cardiologia pacemaker,RUBRICA,5610|3749,|
+180,Cardiologia pediatrica,RUBRICA,6067,
+181,Cardiologia servizio,RUBRICA,4354|7070,|
+182,Cardiologia UTIC,RUBRICA,3126|4444,|
+183,Case Manager CCA,CCA,8540,cca@policlinicogemelli.it
+184,Case Manager CCA Alessandra,CCA,3169,
+185,Case Manager CCA Franca,CCA,8539,
+186,Case Manager CCA Beatrice,CCA,3277,
+187,Case Manager CCA Paola,CCA,3340,
+188,Case Manager CCA Letizia,CCA,3703,
+189,Case Manager CCA Feliciano ROBERTA,CCA,3705,
+190,Case Manager CCA Torriziani,CCA,3190,
+191,Case Manager CCA Columbus,CCA,9963,
+192,Case Manager CCA Frailty Unit,CCA,3149,Andrea Russo
+193,Case Manager CCA Alessandro,CCA,3340,
+194,Case Manager CCA CHIAVO,CCA,3559,
+195,Case Manager CCA Simona,CCA,3168,
+196,Case Manager CCA Fabio,CCA,3625,
+197,Case Manager CCA Piera Caprioli,CCA,3579,
+198,Case Manager CCA Simona D'adamo,CCA,3624,
+199,Ambulanza Asvdea,RUBRICA,3297,asvdea@policlinicogemelli.it
+200,Ambulanza ps,RUBRICA,4034,
+201,Misericordia ambulanza,RUBRICA,3346560930,
+202,CED,RUBRICA,4224|4998|7852|5000,|chiave||servicedesk@policlinicogemelli.it
+203,CEMI,RUBRICA,4414,
+204,Centro antiveleni,RUBRICA,3238|3372,|Soave
+205,Centro ricoveri,RUBRICA,5426|6706,|
+206,Centro TAO,RUBRICA,5441|6356,|
+207,Centro trapianti,RUBRICA,4306,
+208,Centro trasfusionale,RUBRICA,3114|3134|4373|4610|4514,"sangue||||donazione, aferesi"
+209,Cerolini,RUBRICA,5480,
+210,Clinica medica,RUBRICA,5573|4917,|
+211,Chimica clinica,RUBRICA,4222|4250,|
+212,Chimica clinica urgenze,RUBRICA,4689|4829|3120,||
+213,Chirurgia digestiva,RUBRICA,4477|6125,|
+214,Chirurgia generale di guardia,RUBRICA,3181|3182,|
+215,Chirurgia toracica,RUBRICA,6064|3246|4789|6353|3181|4393,|reperibile consulenze||||
+216,Chirurgia d'urgenza,RUBRICA,7075,
+217,Chirurgia maxillo facciale,RUBRICA,6023|4322|6629,||
+218,Chirurgia pediatrica,RUBRICA,3132,
+219,Chirurgia plastica,RUBRICA,3246,
+220,Chirurgia sala generale,RUBRICA,6533,
+221,Chirurgia sala ORL,RUBRICA,6587,
+222,Chirurgia sala specialistiche,RUBRICA,3171,
+223,Chirurgia sala urgenze,RUBRICA,6536,
+224,Chirurgia sala urologia,RUBRICA,3265,
+225,Chirurgia vascolare,RUBRICA,3138|6663,|
+226,Chirurgia vertebrale,RUBRICA,3202|4545,|
+227,Coagulazione,RUBRICA,4438,
+228,Cognitivo funzionale 7M,RUBRICA,6252|6253,|
+229,Colosimo,RUBRICA,3230,
+230,Columbus gastro,RUBRICA,9726,
+231,Columbus portineria,RUBRICA,9646,
+232,Columbus rehab,RUBRICA,5532,Liperoti
+233,Consuelo,RUBRICA,3396428909,
+234,CPRE,RUBRICA,4744,
+235,Cucina latti,RUBRICA,4473,
+236,CUP,RUBRICA,688805560,
+237,Cure Palliative Dispenza,RUBRICA,3563,
+238,Cure Palliative Zazzara,RUBRICA,3536,
+239,Cure Palliative,RUBRICA,3706,
+240,CUT,RUBRICA,8205|8204|8225,||
+241,Day surgery,RUBRICA,4671,
+242,De Candia,RUBRICA,6329,
+243,De Cosmo,RUBRICA,3166,
+244,De Cristofaro,RUBRICA,3137,
+245,De Gaetano,RUBRICA,3356784944,
+246,Degenza medica 2P,RUBRICA,7598|7599|7597,||
+247,Dermatologo,RUBRICA,5681|5257|5284|4227|4211,||||istituto
+248,Dermatologo guardia,RUBRICA,3131,
+249,Diabetologia,RUBRICA,4071|4112|5195|7838,|dh|segreteria|Luca Viti
+250,Dialisi,RUBRICA,4330|3135,|guardia
+251,Dietisti,RUBRICA,4176|4365,|
+252,Di Gennaro,RUBRICA,3498687619|6329,|
+253,Di Gianbenedetto,RUBRICA,5384,
+254,Direttore sanitario dr Capalbo,RUBRICA,3281,
+255,Doglietto studio,RUBRICA,0635340460|0635340530,|
+256,Dottorati di ricerca,RUBRICA,4958,
+257,Draisci,RUBRICA,3721,anestesista
+258,Ecocardio Favuzzi,RUBRICA,6277,
+259,Ecografie,RUBRICA,4602|8239,|
+260,Ecoaddome e ambulatorio da dimissioni,RUBRICA,6265,
+261,Ecoaddome CEMAD Riccardi,RUBRICA,5161|4301,|
+262,Ecoaddome radiologia,RUBRICA,4602,
+263,Ecocardio,RUBRICA,4354|6998,solleciti|sollecito referti
+264,Ecocardio TE,RUBRICA,7070,
+265,Ecodoppler arterioso,RUBRICA,5346,
+266,Eco epatica,RUBRICA,8245|8246,|
+267,Eco gineco,RUBRICA,6787,
+268,Eco Laura,RUBRICA,5161,
+269,Eco radiologia,RUBRICA,4602,
+270,Eco TV,RUBRICA,6787|6786,|
+271,Elettrofisiologia,RUBRICA,4127|5610|3749,||pmk
+272,Elettroencefalo EEG,RUBRICA,4276|3247,|
+273,Ematologia,RUBRICA,4578,
+274,Ematologia aferesi,RUBRICA,4514,
+275,Ematologia DH,RUBRICA,5137|5390|4344,||
+276,Ematologia EE,RUBRICA,4206,
+277,Ematologia emocromo (microscopi),RUBRICA,5933,
+278,Ematologia emocromo urgente,RUBRICA,8284|3129|5933,||
+279,Ematologia emoteca,RUBRICA,4373|4514|3114,|aferesi|sangue
+280,Ematologia guardia,RUBRICA,3129|3114,|per sangue
+281,Ematologia laboratorio,RUBRICA,4968|4206,|
+282,Ematologia reparto,RUBRICA,4568|4278|4578|4968,|||
+283,Ematologia centro trasfusionale,RUBRICA,3114|3134|4373|4610|4514,"sangue||||donazione, aferesi"
+284,Ematologia tipizzazione,RUBRICA,8989,
+285,Ematologia urgenze,RUBRICA,5010|4658|3114|8284|8909,||per sangue||
+286,Ematologia urgenze piastra,RUBRICA,8284|5933,|
+287,Emocoagulazione,RUBRICA,8284|7054|6707|5441|6329|4438,|||||
+288,Emodinamica,RUBRICA,6622|5950,|
+289,Endocrino,RUBRICA,4440|4758,|
+290,Endocrinochirurgia reparto,RUBRICA,4471|4601,|
+291,Endocrinochirurgia dh,RUBRICA,5327|6671,|
+292,Endocrinochirurgia istituto,RUBRICA,4199,
+293,Endocrinochirurgia ambulatori,RUBRICA,4525,
+294,Endoscopia,RUBRICA,6647|6672,|
+295,Endoscopia Arianna,RUBRICA,3137,
+296,Endoscopia caposala,RUBRICA,3173,
+297,Endoscopia digestiva,RUBRICA,3173|4083,|
+298,Endoscopia anestesia,RUBRICA,3537,
+299,Endoscopia Perri,RUBRICA,4744,CPRE
+300,Endoscopia programmazione,RUBRICA,7277,Regina
+301,Endoscopia solleciti e programma,RUBRICA,6672,
+302,Endoscopia servizio,RUBRICA,6672|6647,|
+303,Endoscopia specializzando,RUBRICA,3727,
+304,Epatobiliare,RUBRICA,4403,
+305,ETE,RUBRICA,7070,
+306,Evoli,RUBRICA,6366,
+307,Fantoni,RUBRICA,8532|8533,|
+308,Farmacia,RUBRICA,4666|4267|4268|5336|7732,||||alla dimissione
+309,Farmacia reperibile De Luca,RUBRICA,3891844623,
+310,Fasciani (stanza cornea),RUBRICA,5429|6080,|
+311,Farmacia UFA,RUBRICA,6737|9923,|
+312,Fenici,RUBRICA,4803,
+313,Fisiatria,RUBRICA,3165,
+314,Fisiopatologia respiratoria,RUBRICA,4236|6062,|
+315,Fisioterapia,RUBRICA,5567|5679|6055,||follow up
+316,Foniatra,RUBRICA,4244,
+317,Frailty unit,RUBRICA,3149,
+318,Franca,RUBRICA,3340|8549|3277,||
+319,Franceschi,RUBRICA,3290914553|3227,|
+320,Gambaro,RUBRICA,3465111412,
+321,Gambassi,RUBRICA,3241,
+322,Gastro rep,RUBRICA,4407,
+323,Gastroscopia,RUBRICA,3173|7277,|programmazione
+324,Genetica,RUBRICA,7243|6780,laboratorio|
+325,Gesi,RUBRICA,5496|5498,|
+326,Giordano,RUBRICA,3228|4978|4600,dect||
+327,Ginecologia ambulatorio follow up oncologico,RUBRICA,6786|8222,|
+328,Ginecologia DH,RUBRICA,8556,segreteriaginecologiaoncologica@policlinicogemelli.it
+329,Ginecologia guardia,RUBRICA,3147,
+330,Ginecologia oncologica,RUBRICA,4783|4483|5878,||
+331,Ginecologia patologia ostetrica,RUBRICA,4949,
+332,Ginecologia sala parto,RUBRICA,3109|3118|4821|6343,|||
+333,Ginecologia segreteria,RUBRICA,5629,
+334,Ginecologia centro OPPO,RUBRICA,6787|8062,|
+335,Ginecologia reperibile,RUBRICA,3463774096,
+336,Giubbini,RUBRICA,9909,
+337,Grieco,RUBRICA,5451,
+338,IBD,RUBRICA,3788,
+339,Infettivologo di guardia,RUBRICA,3113,
+340,Infettivologo Tacconelli,RUBRICA,5527,
+341,Infettivologo Di Gianbenedetto,RUBRICA,5384,
+342,Infettivologo Lucia,RUBRICA,5350,
+343,Igiene segreteria,RUBRICA,4396|4628,|
+344,Igiene ospedaliera,RUBRICA,7944|4864,|
+345,Ispettore sanitario,RUBRICA,3281|3286,|
+346,Ispettore sanitario Luongo,RUBRICA,3285,
+347,Ispettore sanitario Pignataro,RUBRICA,3283,
+348,Iezzi,RUBRICA,4675,
+349,Laurenti,RUBRICA,3386743846,
+350,Landolfi,RUBRICA,3207,
+351,Landolfi segreteria,RUBRICA,4335,
+352,Lanzone,RUBRICA,3220,
+353,Laboratorio urgenze,RUBRICA,3120|3163,|
+354,Laboratorio chimica,RUBRICA,4222|4451|4689|4433,|||citologico
+355,Laboratorio pec,RUBRICA,3569,
+356,Lidia backtransfer,RUBRICA,3297,
+357,Logopedia,RUBRICA,4333|6773,|
+358,Maccauro,RUBRICA,3290,
+359,Magazzino,RUBRICA,4956,
+360,Maiuro,RUBRICA,4421|5375,|
+361,Malattie infettive,RUBRICA,5351|4583,|
+362,Mariotti,RUBRICA,4013,
+363,Marrone,RUBRICA,5451,
+364,Maxillo,RUBRICA,6023|4322,|
+365,Maxillo 5D,RUBRICA,3189|4526,|
+366,Mediazione Culturale,RUBRICA,800432665,Help Voice
+367,Mediazione Culturale,RUBRICA,800178484,se non accessibile Help Voice
+368,Medicazioni avanzate,RUBRICA,3715,
+369,Medicina d'urgenza,RUBRICA,5395|5394,|
+370,Medicina nucleare,RUBRICA,5658|4978|4375|3323|4634|3702,|||dect|Valenza|caposala
+371,Mensa,RUBRICA,4930|4935,|
+372,Microbiologia,RUBRICA,4336|4218|4964,istituto|servizio ed emocolture|Masucci
+373,MOC al CEMI,RUBRICA,5566,
+374,Montalto,RUBRICA,5948|3396072211,|
+375,Mormile,RUBRICA,9779|9678,|
+376,Mottola,RUBRICA,3732,
+377,NEMO,RUBRICA,8215|8217,|
+378,NEMO guardia,RUBRICA,3734,
+379,NEMO medici,RUBRICA,8218,
+380,Nefrologia,RUBRICA,8341|3949|3135,||guardia dialisi
+381,Neonatologia,RUBRICA,4169|4357|7728,|TIN|SUB-TIN
+382,Neurochirurgia,RUBRICA,4408,
+383,Neurochirurgia guardia,RUBRICA,3110,
+384,Neurochirurgia infantile,RUBRICA,4587|4795,|
+385,Neurochirurgo dispositivi,RUBRICA,5032|8063|5030|5028,montano|Izzo|d'Ercole|
+386,Neurofisiopatologia EEG,RUBRICA,4276,
+387,Neurofisiopatologia,RUBRICA,6651|4871,|gemelli training center
+388,Neurofisiopatologia segreteria,RUBRICA,6651|5894,|
+389,Neurologia,RUBRICA,5390|4236|4325|7033,|||
+390,Neurologia amb epilessie,RUBRICA,4279,
+391,Neurologia chief,RUBRICA,3269,
+392,Neurologia DH,RUBRICA,5390,
+393,Neurologia donne infermieri,RUBRICA,7033|4325,|cs
+394,Neurologia donne medici,RUBRICA,5930,
+395,Neurologia guardia,RUBRICA,3115,
+396,Neurologia guardia spec,RUBRICA,3925,
+397,Neurologia segreteria,RUBRICA,4303|4435,|
+398,Neurologia stroke,RUBRICA,3174|3175,PS|spec. dopo le 17
+399,Neurologia uomini infermieri,RUBRICA,4724|4324,|cs
+400,Neurologia uomini medici,RUBRICA,4803|4807,|
+401,Neuroriabilitazione,RUBRICA,3338,
+402,Nido,RUBRICA,4245|4445,|
+403,NPI DH,RUBRICA,6239,
+404,NPI guardia,RUBRICA,3159,
+405,NPI reparto,RUBRICA,5436,
+406,NPI dall'altra parte del DH,RUBRICA,6391,
+407,NPI segreteria mariotti,RUBRICA,5340,
+408,Nutrizione clinica,RUBRICA,3379|4365|5412,||
+409,Obi,RUBRICA,3588,
+410,Oculistica,RUBRICA,4528|4928,|
+411,Oculistica ambulatori,RUBRICA,6080|5429,|
+412,Oculistica ambulatori pediatria,RUBRICA,4500|6270,|
+413,Oculistica guardia,RUBRICA,3130,
+414,Oculistica reparto,RUBRICA,6524,
+415,Oculistica Consulente Sarganello,RUBRICA,5976,oculista
+416,Odontoiatria,RUBRICA,4976|5278|4554,||
+417,Oncologia DH,RUBRICA,6682|6318,|
+418,Oncologia pediatrica,RUBRICA,5155|5137,|
+419,Oncologia reparto,RUBRICA,4953|4753,|
+420,Orietta,RUBRICA,3715,
+421,Ortopedia ambulatori,RUBRICA,4343,
+422,Ortopedico guardia,RUBRICA,3121,
+423,Ortopedico guardia spec,RUBRICA,3141,
+424,Ortopedico sala/PS,RUBRICA,4837,
+425,Ortopedia prenotazioni visite,RUBRICA,4343,
+426,Ortopedico PS,RUBRICA,4837,
+427,Ortopedico Pola,RUBRICA,3402636062,
+428,Otorino ambulatorio,RUBRICA,5329|5549|4450,||
+429,Otorino guardia,RUBRICA,3116,
+430,Otorino reparto,RUBRICA,4322|4722,|
+431,Otorino sala,RUBRICA,6587,
+432,Otorino segreteria,RUBRICA,4439,
+433,Pacemaker,RUBRICA,5610,
+434,Padua reparto,RUBRICA,3338,
+435,Palestra med sport,RUBRICA,4943|5567|4592,||
+436,Panocchia,RUBRICA,3135,dialisi
+437,Patologia generale,RUBRICA,4565,
+438,Patologia neonatale,RUBRICA,4169,
+439,Patologia obesità DH,RUBRICA,4963,
+440,Patologia ostetrica,RUBRICA,4949,
+441,PEC,RUBRICA,6069,
+442,Pediatria,RUBRICA,4290|4390|4690,||
+443,Pediatria neonatale,RUBRICA,4169,
+444,Percorso PAD,RUBRICA,3149,
+445,Perilli,RUBRICA,3212,
+446,Perini,RUBRICA,3367,
+447,Perri,RUBRICA,4744,
+448,PET-TC,RUBRICA,6746|6747|6200|4978|4600|3228,|segreteria|referti||Giordano ufficio|dect Giordano
+449,PEV solo ambulatoriale,RUBRICA,630254629,chiama con impegnativa lun-ven dalle 12 alle 13:30
+450,PICC,RUBRICA,3144|3506|3331,"|team accessi venosi centrali|sabato, reperibile sitra"
+451,PICC Giuseppe Iurato,RUBRICA,3497684536,CIC
+452,Pirronti,RUBRICA,3274,radiologia CIC
+453,Pneumologia,RUBRICA,4236|3240|4991|6062|3472,CEMAR|caposala|||
+454,Pneumologi interventisti,RUBRICA,3428,Magnini
+455,Pola,RUBRICA,7075|5314,|
+456,Polisonnografia,RUBRICA,6056|7227|4276|6651,|||
+457,Polisonnografia Mormile,RUBRICA,9678,
+458,Polisonnografia Mormile reparto,RUBRICA,9779,
+459,Polisonnografia segreteria,RUBRICA,4279,
+460,Portieri DECT,RUBRICA,4621,
+461,Portieri entrata IV piano,RUBRICA,4402,
+462,Posto polizia,RUBRICA,4973,
+463,Preospedalizzazione,RUBRICA,5425|5427,|
+464,Prete,RUBRICA,3349|4969|3473833269,per benedizione||Columbus
+465,Programmazione esami,RUBRICA,8225,
+466,Pronto soccorso,PS,4708,
+467,PS bed management,PS,7331|3731|3275,||
+468,PS destinazione,PS,3729,
+469,PS internista,PS,5941|7467|4708,||
+470,PS ortopedico,PS,4837,
+471,PS pediatrico,PS,5940,
+472,PS triage,PS,4036|4037,|
+473,PS triage pediatrico,PS,8270,
+474,PS urologia,PS,4039,
+475,Psichiatria,RUBRICA,5628,
+476,Psichiatria ambulatorio,RUBRICA,4332,
+477,Psichiatria guardia,RUBRICA,3124,
+478,Psichiatria segreteria,RUBRICA,4455|4122|4922,||
+479,Psichiatra caposala,RUBRICA,8275,
+480,Radiologia,RADIOLOGIA,6054,
+481,Radiologia ALPI,RADIOLOGIA,7050|6226,|
+482,Radiologia angiografia,RADIOLOGIA,4675|6268|6361,tecnico|medico|Angio 1
+483,Radiologia caposala,RADIOLOGIA,4947|3515,|
+484,Radiologia coordinatore,RADIOLOGIA,3360,
+485,Radiologia DECT Bonomo,RADIOLOGIA,3204,
+486,Radiologia DECT Colosimo,RADIOLOGIA,3230,
+487,Radiologia DECT Pirronti,RADIOLOGIA,9837,CIC
+488,Radiologia DECT Infante,RADIOLOGIA,9570,CIC
+489,Radiologia direzione,RADIOLOGIA,6054,
+490,Radiologia digerente/contrasti,RADIOLOGIA,8238|8239,|
+491,Radiologia Eco,RADIOLOGIA,4602|8239,|
+492,Radiologia interventistica,RADIOLOGIA,4675|6268,tecnico|medico
+493,Radiologia CUT,RADIOLOGIA,8225,
+494,Radiologia programmazione,RADIOLOGIA,7177|3360,|ufficio.radiologia@policlinicogemelli.it
+495,Radiologia PS,RADIOLOGIA,5942|5944,TC|
+496,Radiologia RMN 1,RADIOLOGIA,8287|5387,|
+497,Radiologia RMN 2,RADIOLOGIA,8289|8288,|
+498,Radiologia RMN 5,RADIOLOGIA,5067,
+499,RMN 4,RADIOLOGIA,5337,
+500,Radiologia Rx dig,RADIOLOGIA,8238|8239,|
+501,Radiologia Rx torace,RADIOLOGIA,4677|4579|3136,|urgente|DECT tecnico
+502,Radiologia sala 8,RADIOLOGIA,8238,
+503,Radiologia sala 28 TC,RADIOLOGIA,7327,
+504,Radiologia sala 29 TC,RADIOLOGIA,4571,
+505,Radiologia sala 38 TC,RADIOLOGIA,5192,
+506,Radiologia sala 40 RMN,RADIOLOGIA,5337|8289,|
+507,Radiologia sala 41 RMN,RADIOLOGIA,5337,
+508,Radiologia sala contrasti,RADIOLOGIA,8238|8239,|
+509,Radiologia schel,RADIOLOGIA,4674|6293|4098,||
+510,Radiologia segreteria,RADIOLOGIA,4394,
+511,Radiologia TC DEA,RADIOLOGIA,5942|5944,|
+512,Radiologia tecnico Rx,RADIOLOGIA,4579|4674|3136|5942|3416,||DECT tecnico||
+513,Radiologia urgenze,RADIOLOGIA,3136,
+514,Radioterapia,RUBRICA,4981|5339,|
+515,Radioterapia guardia,RUBRICA,3155,
+516,Rendeli,RUBRICA,5624,
+517,Reparto 3P,RUBRICA,4414|4832|5395,||
+518,Reparto 5D,RUBRICA,3189|4526,|
+519,Reparto 6M,RUBRICA,4407|5455,|
+520,Reparto 6P,RUBRICA,7286,
+521,Reparto 7P,RUBRICA,4469|5458|4756,|ambulatorio|caposala
+522,Reparto 9M,RUBRICA,4453|5889,|
+523,Reumatologi dect,RUBRICA,3359|4667,|
+524,Riabilitazione 2 CEMI,RUBRICA,4146,
+525,Rianimatore,RUBRICA,4490|3112|3104,||picc alternativa
+526,Rianimatore guardia,RUBRICA,5556,
+527,Riccardi,RUBRICA,5161|4301,|
+528,Risorse umane,RUBRICA,4418,
+529,Risorse umane ucsc,RUBRICA,8764,
+530,Rossi,RUBRICA,3288,tp dolore
+531,Sala generali,RUBRICA,6533,
+532,Sala ORL,RUBRICA,6587,
+533,Sala parto,RUBRICA,3109|3118|4821|6343,|||
+534,Sala specialistiche,RUBRICA,3171,
+535,Sala urgenze,RUBRICA,6536,
+536,Sala urologia,RUBRICA,3265,
+537,Scintigrafia miocardico,RUBRICA,5658,
+538,Scuole specializzazione,RUBRICA,4255|4275,|
+539,Segreteria Annalisa,RUBRICA,4786,
+540,Segreteria dipartimento,RUBRICA,7023,
+541,Segreteria neurologia,RUBRICA,4303|4435,|
+542,Segreteria Pina,RUBRICA,4334,9 piano ala Q
+543,Segreteria specializzazione,RUBRICA,4275|4255,|
+544,Senologia,RUBRICA,6626,
+545,Service desk,RUBRICA,7852,
+546,Servizio aferesi,RUBRICA,4514,
+547,Servizi sociali,RUBRICA,3291|3484,Francesca Giansante|Paciocca
+548,Sganga palliative,RUBRICA,3706,
+549,SI,RUBRICA,9169|7012|7852|4990,|||
+550,SMET,RUBRICA,4438|5441|6329,||
+551,Soave (antiveleni),RUBRICA,3372,
+552,Sollazzi,RUBRICA,3166|3212,|
+553,Solventi 1,RUBRICA,6362|4799,|
+554,Solventi 2,RUBRICA,5401,
+555,Solventi 3,RUBRICA,5615,
+556,Solventi 5,RUBRICA,4347,
+557,Solventi 7,RUBRICA,4293,
+558,Sorveglianza sanitaria,RUBRICA,7290,
+559,Sorveglianza sanitaria specializzandi,RUBRICA,8770|8771,|
+560,Specializzazione,RUBRICA,4932,
+561,Stabilizzazione int,RUBRICA,4761|4453|5889,||
+562,Stroke DECT,RUBRICA,3174|3175,|
+563,Stroke reparto,RUBRICA,6321,
+564,SUB-TIN,RUBRICA,7728,
+565,Tacconelli,RUBRICA,5527,
+566,TAO 8 piano,RUBRICA,4438,
+567,Tecnico radiologia,RUBRICA,4579|4674|3136|5942|3416,||DECT tecnico Rx a letto||
+568,Terapia dolore,RUBRICA,5195|3466|3288,||Rossi
+569,TIN,RUBRICA,4357|7728,|SUB-TIN
+570,TINCH,RUBRICA,3185,
+571,TIP,RUBRICA,5203|5283|3125,||
+572,TIPO,RUBRICA,5299|6635,|
+573,Torace a letto,RUBRICA,3136,DECT tecnico
+574,Toracica,RUBRICA,6064|3246|4789|6353|3181|4393,|reperibile consulenze||||
+575,Torrice,RUBRICA,3240,
+576,Trasfusionale,RUBRICA,3114|3134|4373|4610|4514,"sangue||||donazione, aferesi"
+577,Trapianti,RUBRICA,4609,
+578,Trapianti fegato,RUBRICA,4469,
+579,Triage PS,RUBRICA,4036|4037,|
+580,Triage PS pediatrico,RUBRICA,8270,
+581,Turriziani,RUBRICA,3190,
+582,4U,RUBRICA,5351,
+583,UFA,RUBRICA,6737,
+584,Ufficio Mensa e Badge stanza,RUBRICA,130|4448,|
+585,Ufficio ricerca,RUBRICA,4952,
+586,Ufficio Stranieri,RUBRICA,5892,
+587,Urologo di guardia,RUBRICA,3123,
+588,Urologia,RUBRICA,3199|4039|5252|3265|4478|4605|3182,|PS|appuntamenti cistoscopia|sala|||
+589,UTIC,RUBRICA,3126|4444,|
+590,Valentini,RUBRICA,3216,
+591,Valenza,RUBRICA,4634,medicina nucleare
+592,Vertebrale,RUBRICA,4993|4593,|
+593,Vetrugno,RUBRICA,4987,risk.management@policlinicogemelli.it
+594,Vecchioli,RUBRICA,3268,
+595,Vigilantes,RUBRICA,3373,
+596,Volpe,RUBRICA,3293,
+597,VN,RUBRICA,4417,
+598,VP,RUBRICA,8562|8752,|
+599,Zampino,RUBRICA,5210,
+600,Emergenze sanitarie,COLUMBUS,9555,
+601,Emergenza incendio e altre emergenze,COLUMBUS,9000,
+602,Medico di Guardia,COLUMBUS,9913,
+603,Rianimatore,COLUMBUS,9906,
+604,0 Est,COLUMBUS,5552|9391|5532,medici|specializzandi|infermieri
+605,1 Ovest,COLUMBUS,9726,
+606,1 Est,COLUMBUS,9648,
+607,2 Nord,COLUMBUS,3795|9731,medici|infermieri
+608,2 Ovest,COLUMBUS,9730,
+609,3 Est,COLUMBUS,9733,
+610,3 Ovest,COLUMBUS,9734,
+611,TICO,COLUMBUS,9740,
+612,Radiologia Columbus,COLUMBUS,9688|9893,|
+613,Radiologia Columbus Eco,COLUMBUS,9742,
+614,Radiologia Columbus Infante,COLUMBUS,9570,
+615,Radiologia Columbus Medici sala TC,COLUMBUS,9987,
+616,Radiologia Columbus Pirronti,COLUMBUS,9837,
+617,Radiologia Columbus RMN,COLUMBUS,8288|8289,|
+618,Radiologia Columbus Rx,COLUMBUS,9338,
+619,Radiologia Columbus TC,COLUMBUS,9986|9849|9987,||medici
+620,Addolorato Columbus,COLUMBUS,5650,
+621,Assistenza sociale Columbus,COLUMBUS,9501|9925,|Ferri
+622,Bed management Columbus,COLUMBUS,7331|3731|3275,||
+623,Cardiologo Columbus,COLUMBUS,9918,
+624,Chirurgo Columbus,COLUMBUS,3471,
+625,Columbus gastro,COLUMBUS,9726,
+626,Continuita assistenziale Columbus,COLUMBUS,9963,ccacovid19@policlinicogemelli.it
+627,Endoscopia Columbus,COLUMBUS,7277|9349,|
+628,Ferri Columbus,COLUMBUS,9925,
+629,PICC Giuseppe Iurato Columbus,COLUMBUS,3497684536,
+630,Rehab Columbus,COLUMBUS,5532,Liperoti
+631,Ambulanza trasporti,SERVIZI,3474120724,
+632,Camminatore,SERVIZI,3486016022,
+633,Caldaista,SERVIZI,9934,
+634,Copma,SERVIZI,9933,
+635,Cucina,SERVIZI,9712,
+636,CUT,SERVIZI,9834|3426336723,|festivi
+637,Guardia giurata,SERVIZI,3373|4669,|
+638,Lavanderia,SERVIZI,9783,
+639,Manutenzione/riparazioni,SERVIZI,5000,
+640,Portineria,SERVIZI,9646,
+641,Servizio mortuario,SERVIZI,3367,
+642,Sitra CIC,SERVIZI,9832|9572,|
+644,Emergenze Sanitarie Gemelli,GUARDIE E URGENZE,5555,
+645,Infermieri. 11N,,5394,
+646,2B,REPARTI,4171|3623,|
